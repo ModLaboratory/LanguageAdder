@@ -25,8 +25,8 @@ A plugin to add your custom language.
 8. Then you can switch your language in the game options!
 
 ## Known Bugs
-[X] Hud buttons' text can not be changed. (Solved)
-[ ] Main menu buttons' text can not be changed.
+- [X] Hud buttons' text can not be changed. (Solved)
+- [ ] Main menu buttons' text can not be changed.
 
 ## Pull requests are welcome!
 
