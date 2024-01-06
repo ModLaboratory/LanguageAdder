@@ -1,6 +1,5 @@
 ﻿using Cpp2IL.Core.Extensions;
 using HarmonyLib;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using System;
 using System.IO;
 using System.Linq;
@@ -14,41 +13,6 @@ namespace LanguageAdder
     [HarmonyPatch]
     internal static class Patch
     {
-        [HarmonyPatch(typeof(TranslationController), nameof(TranslationController.GetString), new Type[] { typeof(StringNames), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
-        [HarmonyPostfix]
-        static void GetStringPatch(TranslationController __instance, ref string __result, [HarmonyArgument(0)] StringNames id, [HarmonyArgument(1)] Il2CppReferenceArray<Il2CppSystem.Object> parts)
-        {
-            if (Data.CurrentCustomLanguageId == int.MinValue) return;
-
-            using StreamReader reader = File.OpenText(CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).FilePath);
-            string line;
-            
-            while ((line = reader.ReadLine()) != null)
-            {
-                if (line.StartsWith('#')) continue;
-                string[] translationKeyValue = line.Split('\t');
-
-                if (translationKeyValue[0] == id.ToString())
-                {
-                    if (translationKeyValue.Length == 2)
-                    {
-                        var replaced = translationKeyValue[1].Replace("\\r", "").Replace("\\n", "\n");
-                        if (parts == null)
-                        {
-                            __result = replaced;
-                            break;
-                        }
-                        else
-                        {
-                            __result = Il2CppSystem.String.Format(replaced, parts);
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-
         [HarmonyPatch(typeof(SettingsLanguageMenu), nameof(SettingsLanguageMenu.Awake))]
         [HarmonyPostfix]
         static void SetLanguageButtonPatch(SettingsLanguageMenu __instance)
@@ -125,20 +89,18 @@ namespace LanguageAdder
             if (!error) Data.LoadCustomLanguages();
         }
 
-        [HarmonyPatch(typeof(HudManager), nameof(HudManager.Update))]
-        [HarmonyPostfix]
-        static void ButtonTextUpdate(HudManager __instance)
-        {
-            Func<StringNames, Il2CppReferenceArray<Il2CppSystem.Object>, string> getString = TranslationController.Instance.GetString;
-            __instance.UseButton.OverrideText(getString(StringNames.UseLabel, null));
-            __instance.PetButton.OverrideText(getString(StringNames.PetLabel, null));
-            __instance.KillButton.OverrideText(getString(StringNames.KillLabel, null));
-            __instance.SabotageButton.OverrideText(getString(StringNames.SabotageLabel, null));
-            __instance.AdminButton.OverrideText(getString(StringNames.Admin, null));
-            __instance.ImpostorVentButton.OverrideText(getString(StringNames.VentLabel, null));
-            __instance.ReportButton.OverrideText(getString(StringNames.ReportLabel, null));
-        }
-        
-
+        //[HarmonyPatch(typeof(HudManager), nameof(HudManager.Update))]
+        //[HarmonyPostfix]
+        //static void ButtonTextUpdate(HudManager __instance)
+        //{
+        //    Func<StringNames, Il2CppReferenceArray<Il2CppSystem.Object>, string> getString = TranslationController.Instance.GetString;
+        //    __instance.UseButton.OverrideText(getString(StringNames.UseLabel, null));
+        //    __instance.PetButton.OverrideText(getString(StringNames.PetLabel, null));
+        //    __instance.KillButton.OverrideText(getString(StringNames.KillLabel, null));
+        //    __instance.SabotageButton.OverrideText(getString(StringNames.SabotageLabel, null));
+        //    __instance.AdminButton.OverrideText(getString(StringNames.Admin, null));
+        //    __instance.ImpostorVentButton.OverrideText(getString(StringNames.VentLabel, null));
+        //    __instance.ReportButton.OverrideText(getString(StringNames.ReportLabel, null));
+        //}
     }
 }

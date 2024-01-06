@@ -145,11 +145,42 @@ namespace LanguageAdder
 
             DestroyableSingleton<LanguageSetter>.Instance.SetLanguage(langButton);
             TranslationController.Instance.SetLanguage(langButton.Language);
+            UpdateStrings();
 
-            DestroyableSingleton<SettingsLanguageMenu>.Instance.transform.Find("Text_TMP").GetComponent<TextMeshPro>().text =  langButton.Title.text;
+            DestroyableSingleton<SettingsLanguageMenu>.Instance.transform.Find("Text_TMP").GetComponent<TextMeshPro>().text = langButton.Title.text;
 
             Log.LogInfo($"Changed custom language to {langButton.Title.text} (Base language: {langButton.Language.Name})");
             SaveLastLanguage(customLanguage);
+        }
+
+        public static void UpdateStrings()
+        {
+            if (CurrentCustomLanguageId == int.MinValue) return;
+
+            using StreamReader reader = File.OpenText(CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).FilePath);
+            string line;
+
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (line.StartsWith('#')) continue;
+                string[] translationKeyValue = line.Split('\t');
+                string valueStr;
+                string key = translationKeyValue[0];
+                StringNames id;
+
+                if (Enum.TryParse(key, out id))
+                {
+                    if (translationKeyValue.Length == 2)
+                    {
+                        valueStr = translationKeyValue[1].Replace("\\r", "\r").Replace("\\n", "\n");
+
+                        TranslationController.Instance.currentLanguage.AllStrings[id.ToString()] = valueStr;
+
+                        continue;
+                    }
+                    break;
+                }
+            }
         }
 
     }
@@ -169,12 +200,12 @@ namespace LanguageAdder
             LanguageName = languageName;
             FilePath = filePath;
             BaseLanguage = baseLanguage;
-            LanguageId = CustomLanguages.LastOrDefault() ?? ((int)Enum.GetValues<SupportedLangs>().ToList().LastOrDefault() + 1);
+            LanguageId = (CustomLanguages.LastOrDefault() ?? (int)Enum.GetValues<SupportedLangs>().ToList().LastOrDefault()) + 1;
             CustomLanguages.Add(this);
             Log.LogInfo($"Language registered: {LanguageName} {FilePath} {BaseLanguage.ToString()}: {LanguageId}");
         }
 
-        public static CustomLanguage? GetCustomLanguageById(int id) => CustomLanguages.Where(l => l.LanguageId == id).FirstOrDefault();
+        public static CustomLanguage GetCustomLanguageById(int id) => CustomLanguages.Where(l => l.LanguageId == id).FirstOrDefault();
 
         public static implicit operator int(CustomLanguage l) => l.LanguageId;
     }
