@@ -141,38 +141,6 @@ namespace LanguageAdder
                     continue;
                 }
             }
-
-            //using StreamReader reader = File.OpenText(RegisteredLangFilePath);
-            //List<string> langFiles = new();
-            //string line;
-            //int count = 0;
-            //while ((line = reader.ReadLine()) != null)
-            //{
-            //    count++;
-            //    if (line.StartsWith('#')) continue;
-
-            //    string[] args = line.Split('\t');
-            //    if (args.Length != 3)
-            //    {
-            //        Log.LogError($"Error reading register file at line {count}: Format error.");
-            //        continue;
-            //    }
-
-            //    int langId = 0;
-            //    SupportedLangs? lang = null;
-            //    try
-            //    {
-            //        langId = int.Parse(args[2]);
-            //        lang = (SupportedLangs)langId;
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        Log.LogError($"Error reading registry file at line {count}: Incorrect language id!\r\n{e}");
-            //        continue;
-            //    }
-
-            //    _ = new CustomLanguage(args[0], $@"{DataFolderPath}\{args[1]}", lang.Value);
-            //}
         }
 
         public static void SaveLastLanguage(CustomLanguage lang) => LastCustomLanguage = lang;
@@ -207,39 +175,6 @@ namespace LanguageAdder
 
             var fullTranslations = File.ReadAllText(CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).FilePath);
             Root = JObject.Parse(fullTranslations);
-
-
-
-        //    using StreamReader reader = File.OpenText(CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).FilePath);
-        //    string line;
-        //    StringBuilder log = new();
-
-        //    while ((line = reader.ReadLine()) != null)
-        //    {
-        //        if (line.StartsWith('#')) continue;
-        //        string[] translationKeyValue = line.Split('\t');
-        //        string valueStr;
-        //        string key = translationKeyValue[0];
-
-        //        if (Enum.TryParse(key, out StringNames id))
-        //        {
-        //            if (translationKeyValue.Length == 2)
-        //            {
-        //                valueStr = translationKeyValue[1].Replace("\\r", "\r").Replace("\\n", "\n");
-
-        //                TranslationMap[id.ToString()] = valueStr;
-
-        //                //TranslationController.Instance.currentLanguage.AllStrings[id.ToString()] = valueStr;
-        //                //log.AppendLine($"Updated {id} to {valueStr}");
-        //                //log.AppendLine($"\tCheck: {TranslationController.Instance.currentLanguage.AllStrings[id.ToString()]}");
-
-        //                continue;
-        //            }
-        //            break;
-        //        }
-        //    }
-
-        //    //Log.LogMessage(log.ToString());
         }
     }
 
