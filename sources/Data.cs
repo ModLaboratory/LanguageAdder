@@ -1,9 +1,13 @@
-﻿using System;
+﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
+using Il2CppSystem.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
-using TMPro;
+using System.Text;
 using static LanguageAdder.Main;
 
 namespace LanguageAdder
@@ -24,9 +28,9 @@ namespace LanguageAdder
         public static string DataFolderPath => $@"{GamePath}\{DataFolderName}";
         public static string ExampleLangFileName => $"{TranslationController.Instance.currentLanguage.languageID}_Example.lang";
         public static string ExampleLangFilePath => $@"{DataFolderPath}\{ExampleLangFileName}";
-        public static string RegisterLangFileName => "language.dat";
-        public static string RegisterLangFilePath => $@"{DataFolderPath}\{RegisterLangFileName}";
-        public static string LastLanguageFileName => "lastLanguage.dat";
+        public static string RegisteredLangFileName => "Languages.json";
+        public static string RegisteredLangFilePath => $@"{DataFolderPath}\{RegisteredLangFileName}";
+        public static string LastLanguageFileName => "LastLanguage.dat";
         public static string LastLanguageFilePath => $@"{DataFolderPath}\{LastLanguageFileName}";
 
         /// <summary>
@@ -47,7 +51,7 @@ namespace LanguageAdder
                     }
                     catch (Exception e)
                     {
-                        Log.LogError("Error reading last custom language: " + e);
+                        Main.Logger.LogError("Error reading last custom language: " + e);
                     }
                 }
                 else
@@ -66,7 +70,7 @@ namespace LanguageAdder
                 }
                 catch (Exception e)
                 {
-                    Log.LogError("Error saving last custom language: " + e);
+                    Main.Logger.LogError("Error saving last custom language: " + e);
                 }
             }
         }
@@ -74,66 +78,101 @@ namespace LanguageAdder
 
         public static void GenerateCurrentLanguageExampleFile()
         {
-            if (File.Exists(ExampleLangFilePath)) return;
+            JObject root = new();
 
-            using StreamWriter writer = File.CreateText(ExampleLangFilePath);
-            foreach (var stringName in Enum.GetValues<StringNames>()) writer.WriteLine(stringName.ToString() + "\t" + $@"{Regex.Replace(TranslationController.Instance.GetString(stringName), @"\r?\n", @"\r\n")}");
+            foreach (var stringName in Enum.GetValues<StringNames>())
+            {
+                var key = stringName.ToString();
+                var value = TranslationController.Instance.GetString(stringName);
+
+                root[key] = value;
+            }
+
+            var json = root.ToString(Formatting.Indented);
+            File.WriteAllText(ExampleLangFilePath, json);
         }
 
         public static void LoadCustomLanguages()
         {
-            if (CustomLanguage.CustomLanguages.Count != 0)
+            if (CustomLanguage.AllLanguages.Count != 0)
             {
                 LanguageSetter instance = DestroyableSingleton<LanguageSetter>.Instance;
 
                 var btns = instance ? new List<LanguageButton>(instance.AllButtons) : null;
 
-                CustomLanguage.CustomLanguages.ForEach(l =>
+                CustomLanguage.AllLanguages.ForEach(l =>
                 {
                     if (instance) btns.Remove(l.LanguageButton);
-                    CustomLanguage.CustomLanguages.Remove(l);
+                    CustomLanguage.AllLanguages.Remove(l);
                     if (l.LanguageButton) UnityEngine.Object.Destroy(l.LanguageButton.gameObject);
                 });
 
                 if (instance) instance.AllButtons = btns.ToArray();
             }
 
-            if (!File.Exists(RegisterLangFilePath) || !Directory.Exists(DataFolderPath))
+            if (!File.Exists(RegisteredLangFilePath) || !Directory.Exists(DataFolderPath))
             {
-                Log.LogError("Error reading file(s): Not exist.");
+                Main.Logger.LogError("Error reading file(s): Not exist.");
                 return;
             }
-            using StreamReader reader = File.OpenText(RegisterLangFilePath);
-            List<string> langFiles = new();
-            string line;
-            int count = 0;
-            while ((line = reader.ReadLine()) != null)
+
+            var languagesJson = File.ReadAllText(RegisteredLangFilePath);
+            var root = JObject.Parse(languagesJson);
+
+            var properties = root.Properties().ToList();
+
+            foreach (var property in properties)
             {
-                count++;
-                if (line.StartsWith('#')) continue;
+                var name = property.Name;
 
-                string[] args = line.Split('\t');
-                if (args.Length != 3)
-                {
-                    Log.LogError($"Error reading register file at line {count}: Format error.");
-                    continue;
-                }
-
-                int langId = 0;
-                SupportedLangs? lang = null;
                 try
                 {
-                    langId = int.Parse(args[2]);
-                    lang = (SupportedLangs)langId;
+                    var path = property.Value["path"].ToString();
+                    var @base = property.Value["base"].ToString();
+
+                    if (!Enum.TryParse<SupportedLangs>(@base, out var baseLang))
+                        throw new InvalidDataException($"Invalid {baseLang}");
+
+                    _ = new CustomLanguage(name, path, baseLang);
                 }
                 catch (Exception e)
                 {
-                    Log.LogError($"Error reading register file at line {count}: Incorrect language id!\r\n{e}");
+                    Main.Logger.LogError("Invalid language registry for: " + name + "with " + e);
                     continue;
                 }
-
-                _ = new CustomLanguage(args[0], $@"{DataFolderPath}\{args[1]}", lang.Value);
             }
+
+            //using StreamReader reader = File.OpenText(RegisteredLangFilePath);
+            //List<string> langFiles = new();
+            //string line;
+            //int count = 0;
+            //while ((line = reader.ReadLine()) != null)
+            //{
+            //    count++;
+            //    if (line.StartsWith('#')) continue;
+
+            //    string[] args = line.Split('\t');
+            //    if (args.Length != 3)
+            //    {
+            //        Log.LogError($"Error reading register file at line {count}: Format error.");
+            //        continue;
+            //    }
+
+            //    int langId = 0;
+            //    SupportedLangs? lang = null;
+            //    try
+            //    {
+            //        langId = int.Parse(args[2]);
+            //        lang = (SupportedLangs)langId;
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Log.LogError($"Error reading registry file at line {count}: Incorrect language id!\r\n{e}");
+            //        continue;
+            //    }
+
+            //    _ = new CustomLanguage(args[0], $@"{DataFolderPath}\{args[1]}", lang.Value);
+            //}
         }
 
         public static void SaveLastLanguage(CustomLanguage lang) => LastCustomLanguage = lang;
@@ -144,50 +183,69 @@ namespace LanguageAdder
             var langButton = customLanguage.LanguageButton;
 
             DestroyableSingleton<LanguageSetter>.Instance.SetLanguage(langButton);
-            TranslationController.Instance.SetLanguage(langButton.Language);
+            TranslationController.Instance.SetLanguage(customLanguage.BaseLanguage);
             UpdateStrings();
 
-            DestroyableSingleton<SettingsLanguageMenu>.Instance.transform.Find("Text_TMP").GetComponent<TextMeshPro>().text = langButton.Title.text;
+            try
+            {
+                DestroyableSingleton<SettingsLanguageMenu>.Instance.selectedLangText.text = langButton.Title.text;
+            }
+            catch (Exception e)
+            {
+                Main.Logger.LogWarning("Gotcha! " + e);
+            }
 
-            Log.LogInfo($"Changed custom language to {langButton.Title.text} (Base language: {langButton.Language.Name})");
+            Main.Logger.LogInfo($"Changed custom language to {langButton.Title.text} (Base language: {langButton.Language.Name})");
             SaveLastLanguage(customLanguage);
         }
+
+        public static JObject Root { get; set; } = new();
 
         public static void UpdateStrings()
         {
             if (CurrentCustomLanguageId == int.MinValue) return;
 
-            using StreamReader reader = File.OpenText(CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).FilePath);
-            string line;
+            var fullTranslations = File.ReadAllText(CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).FilePath);
+            Root = JObject.Parse(fullTranslations);
 
-            while ((line = reader.ReadLine()) != null)
-            {
-                if (line.StartsWith('#')) continue;
-                string[] translationKeyValue = line.Split('\t');
-                string valueStr;
-                string key = translationKeyValue[0];
-                StringNames id;
 
-                if (Enum.TryParse(key, out id))
-                {
-                    if (translationKeyValue.Length == 2)
-                    {
-                        valueStr = translationKeyValue[1].Replace("\\r", "\r").Replace("\\n", "\n");
 
-                        TranslationController.Instance.currentLanguage.AllStrings[id.ToString()] = valueStr;
+        //    using StreamReader reader = File.OpenText(CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).FilePath);
+        //    string line;
+        //    StringBuilder log = new();
 
-                        continue;
-                    }
-                    break;
-                }
-            }
+        //    while ((line = reader.ReadLine()) != null)
+        //    {
+        //        if (line.StartsWith('#')) continue;
+        //        string[] translationKeyValue = line.Split('\t');
+        //        string valueStr;
+        //        string key = translationKeyValue[0];
+
+        //        if (Enum.TryParse(key, out StringNames id))
+        //        {
+        //            if (translationKeyValue.Length == 2)
+        //            {
+        //                valueStr = translationKeyValue[1].Replace("\\r", "\r").Replace("\\n", "\n");
+
+        //                TranslationMap[id.ToString()] = valueStr;
+
+        //                //TranslationController.Instance.currentLanguage.AllStrings[id.ToString()] = valueStr;
+        //                //log.AppendLine($"Updated {id} to {valueStr}");
+        //                //log.AppendLine($"\tCheck: {TranslationController.Instance.currentLanguage.AllStrings[id.ToString()]}");
+
+        //                continue;
+        //            }
+        //            break;
+        //        }
+        //    }
+
+        //    //Log.LogMessage(log.ToString());
         }
-
     }
 
     public class CustomLanguage
     {
-        public static List<CustomLanguage> CustomLanguages { get; private set; } = new();
+        public static List<CustomLanguage> AllLanguages { get; private set; } = new();
 
         public string LanguageName { get; init; }
         public string FilePath { get; init; }
@@ -200,12 +258,12 @@ namespace LanguageAdder
             LanguageName = languageName;
             FilePath = filePath;
             BaseLanguage = baseLanguage;
-            LanguageId = (CustomLanguages.LastOrDefault() ?? (int)Enum.GetValues<SupportedLangs>().ToList().LastOrDefault()) + 1;
-            CustomLanguages.Add(this);
-            Log.LogInfo($"Language registered: {LanguageName} {FilePath} {BaseLanguage.ToString()}: {LanguageId}");
+            LanguageId = (AllLanguages.LastOrDefault() ?? (int)Enum.GetValues<SupportedLangs>().ToList().LastOrDefault()) + 1;
+            AllLanguages.Add(this);
+            Main.Logger.LogInfo($"Language registered: {LanguageName} {FilePath} {BaseLanguage.ToString()}: {LanguageId}");
         }
 
-        public static CustomLanguage GetCustomLanguageById(int id) => CustomLanguages.Where(l => l.LanguageId == id).FirstOrDefault();
+        public static CustomLanguage GetCustomLanguageById(int id) => AllLanguages.Where(l => l.LanguageId == id).FirstOrDefault();
 
         public static implicit operator int(CustomLanguage l) => l.LanguageId;
     }

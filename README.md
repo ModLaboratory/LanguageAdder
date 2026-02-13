@@ -9,10 +9,21 @@ A plugin to add your custom language.
 3. In this folder, there are two files: `(YOUR_CURRENT_GAME_LANGUAGE)_Example.lang` `language.dat`
 4. Copy your example file and rename it.
 5. Change the translations in the new file, then save it.
-6. Open `language.dat` as a text file, then edit it:
+6. Edit `language.json`:
 
- ```
- Test Language	C:\Path\To\Your\Game\Language_DATA\test.lang	0
+ ```json
+{
+	"Language1":
+	{
+		"path": ".\\Language_DATA\\lang1.lang",
+		"base": "English"
+	},
+	"Language2":
+	{
+		"path": ".\\Language_DATA\\lang2.lang",
+		"base": "English"
+	}
+}
  ```
 
  `Test Language` is the name of the language, that will be shown in the game.

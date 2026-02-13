@@ -3,18 +3,17 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>LanguageAdder</AssemblyName>
-    <Description>A tool for adding custom languages that are not support in Among Us</Description>
+    <Description>A tool for adding custom languages that are not supported in Among Us</Description>
     <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
-    <AmongUs>H:\Among Us\AmongUs</AmongUs>
   </PropertyGroup>
 
   <ItemGroup>
-  <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.670" Private="false" ExcludeAssets="runtime;native" />
-        <PackageReference Include="AmongUs.GameLibs.Steam" Version="2023.11.28" PrivateAssets="all" />
-        <PackageReference Include="BepInEx.IL2CPP.MSBuild" Version="2.0.1" PrivatPeAssets="all" ExcludeAssets="runtime" />
-</ItemGroup>
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.670" Private="false" ExcludeAssets="runtime;native" />
+    <PackageReference Include="AmongUs.GameLibs.Steam" Version="2025.11.18" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.IL2CPP.MSBuild" Version="2.0.1" PrivatPeAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
 
 <Target Name="Copy" AfterTargets="Build" Condition="'$(AmongUs)' != ''">
 		<Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(AmongUs)/BepInEx/plugins/" Condition="'$(Configuration)' == 'Debug'" />
