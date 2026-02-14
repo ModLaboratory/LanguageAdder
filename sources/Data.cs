@@ -21,22 +21,24 @@ namespace LanguageAdder
         /// <summary>
         /// The name of language data folder.
         /// </summary>
-        public static string DataFolderName => "Language_Data";
+        public const string DataFolderName = "Language_Data";
         /// <summary>
         /// Path to the language data folder.
         /// </summary>
         public static string DataFolderPath => $@"{GamePath}\{DataFolderName}";
         public static string ExampleLangFileName => $"{TranslationController.Instance.currentLanguage.languageID}_Example.lang";
         public static string ExampleLangFilePath => $@"{DataFolderPath}\{ExampleLangFileName}";
-        public static string RegisteredLangFileName => "Languages.json";
+        public const string RegisteredLangFileName = "Languages.json";
         public static string RegisteredLangFilePath => $@"{DataFolderPath}\{RegisteredLangFileName}";
-        public static string LastLanguageFileName => "LastLanguage.dat";
+        public const string LastLanguageFileName = "LastLanguage.dat";
         public static string LastLanguageFilePath => $@"{DataFolderPath}\{LastLanguageFileName}";
 
         /// <summary>
         /// Get current custom language ID.
         /// </summary>
         public static int CurrentCustomLanguageId { get; set; } = int.MinValue;
+        public static JObject Root { get; set; } = new();
+
         public static CustomLanguage LastCustomLanguage
         {
             get
@@ -152,7 +154,9 @@ namespace LanguageAdder
 
             DestroyableSingleton<LanguageSetter>.Instance.SetLanguage(langButton);
             TranslationController.Instance.SetLanguage(customLanguage.BaseLanguage);
-            UpdateStrings();
+
+            var fullTranslations = File.ReadAllText(CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).FilePath);
+            Root = JObject.Parse(fullTranslations);
 
             try
             {
@@ -165,16 +169,6 @@ namespace LanguageAdder
 
             Main.Logger.LogInfo($"Changed custom language to {langButton.Title.text} (Base language: {langButton.Language.Name})");
             SaveLastLanguage(customLanguage);
-        }
-
-        public static JObject Root { get; set; } = new();
-
-        public static void UpdateStrings()
-        {
-            if (CurrentCustomLanguageId == int.MinValue) return;
-
-            var fullTranslations = File.ReadAllText(CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).FilePath);
-            Root = JObject.Parse(fullTranslations);
         }
     }
 

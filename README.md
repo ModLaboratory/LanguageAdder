@@ -1,58 +1,36 @@
 # LanguageAdder
 
-A plugin to add your custom language.
+A plugin to add your custom languages.
 
-## How To Add Your Custom Language
-0. Get the newest mod release and install it.
+## How To Add Your Custom Languages
+0. Get the latest mod release and install it.
 1. Start your game.
-2. After game shows you main menu, open your Among Us game root directory. In general, you can see a `Language_DATA` folder in your game root directory.
-3. In this folder, there are two files: `(YOUR_CURRENT_GAME_LANGUAGE)_Example.lang` `language.dat`
-4. Copy your example file and rename it.
-5. Change the translations in the new file, then save it.
-6. Edit `language.json`:
+2. After the game shows you main menu, open your Among Us game root directory. Normally, you can see a `Language_Data` folder in your game root directory.
+3. In this folder, there are two files: `(YOUR_CURRENT_GAME_LANGUAGE)_Example.lang` `language.dat`. (Note: when you switched to other languages, an example language file will be automatically generated. You can also press `F1` to generate an example language file in the current game language.)
+4. Copy the example file and rename it.
+5. Modify the translations in the new file, then save it.
+6. Edit `Languages.json`:
 
  ```json
 {
 	"Language1":
 	{
-		"path": ".\\Language_DATA\\lang1.lang",
+		"path": ".\\Language_Data\\lang1.lang",
 		"base": "English"
 	},
 	"Language2":
 	{
-		"path": ".\\Language_DATA\\lang2.lang",
+		"path": ".\\Language_Data\\lang2.lang",
 		"base": "English"
 	}
 }
  ```
 
- `Test Language` is the name of the language, that will be shown in the game.
- `C:\Path\To\Your\Game\Language_DATA\test.lang` is the path of the file.
- `0` is the id of the language that is based on.
- 
- *Warning: `Tab` for separating each item!*
+- `Language1` `Language2` is the name of the language, which will be shown in the menu.
+- `.\\Language_DATA\\lang1.lang` `.\\Language_DATA\\lang2.lang` is the path of the file.
+- `English` is the name of the language that your language is based on. (Supported game native languages: `English, Latam, Brazilian, Portuguese, Korean, Russian, Dutch, Filipino, French, German, Italian, Japanese, Spanish, SChinese, TChinese, Irish`)
 
-7. Open your game if you closed the game; If not, press `F2` to reload language.
-8. Then you can switch your language in the game options!
-
-## Known Bugs
-- [X] Hud buttons' text can not be changed. (Solved)
-- [ ] Main menu buttons' text can not be changed.
+7. Open your game if you quitted the game; Otherwise, press `F2` to reload language.
+8. Then you can switch your language in settings!
 
 ## Pull requests are welcome!
-
-## Others
-1. Use `#` to make the plugin ignore this line.
- ```
- # Hello World!
- #AMOGUS
- Test Language	C:\Path\To\Your\Game\Language_DATA\test.lang	0
- ```
- ```
- None	None
- BackButton	Back
- AvailableGamesLabel	Available Games
- # Not translated
- # CreateGameButton	
- ...
- ```

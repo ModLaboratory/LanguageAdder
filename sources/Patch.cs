@@ -121,7 +121,7 @@ namespace LanguageAdder
 
         [HarmonyPatch(typeof(TranslationController), nameof(TranslationController.GetString), new[] { typeof(string), typeof(string), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
         [HarmonyPrefix]
-        public static bool GetStringPatch(string id, string defaultStr, Il2CppReferenceArray<Il2CppSystem.Object> parts, ref string __result)
+        public static bool GetStringPatch(TranslationController __instance, string id, string defaultStr, Il2CppReferenceArray<Il2CppSystem.Object> parts, ref string __result)
         {
             if (Data.CurrentCustomLanguageId == int.MinValue) return true;
 
@@ -129,6 +129,8 @@ namespace LanguageAdder
 
             if (__result.IsNullOrWhiteSpace())
                 __result = Il2CppSystem.String.Format(defaultStr, parts);
+            if (__result.IsNullOrWhiteSpace())
+                __result = __instance.fallbackLanguage.GetString(id, parts);
             if (__result.IsNullOrWhiteSpace())
                 __result = "STRMISS";
 
