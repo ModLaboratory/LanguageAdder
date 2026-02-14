@@ -1,4 +1,5 @@
-﻿using Il2CppSystem.Linq;
+﻿using HarmonyLib;
+using Il2CppSystem.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -164,21 +165,30 @@ namespace LanguageAdder
         {
             CurrentCustomLanguageId = customLanguage.LanguageId;
             var langButton = customLanguage.LanguageButton;
+            var langSetter = Object.FindObjectOfType<LanguageSetter>(true);
 
-            DestroyableSingleton<LanguageSetter>.Instance.SetLanguage(langButton);
+            if (langSetter)
+                langSetter.SetLanguage(langButton);
+            else
+                Main.Logger.LogWarning("Unable to find an instance of " + nameof(LanguageSetter));
+
             TranslationController.Instance.SetLanguage(customLanguage.BaseLanguage);
 
             var fullTranslations = File.ReadAllText(CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).FilePath);
             Root = JObject.Parse(fullTranslations);
 
-            try
+            var menu = Object.FindObjectOfType<SettingsLanguageMenu>(true);
+
+            if (langSetter.parentLangButton)
             {
-                DestroyableSingleton<SettingsLanguageMenu>.Instance.selectedLangText.text = langButton.Title.text;
+                langSetter.parentLangButton.text = langButton.Title.text;
             }
-            catch (Exception e)
+            else
             {
-                Main.Logger.LogWarning("Gotcha! " + e);
+                Main.Logger.LogWarning("Null: " + nameof(langSetter.parentLangButton));
             }
+
+            TranslationController.Instance.ActiveTexts.ToArray().Do(t => t.ResetText()); // Refresh texts
 
             Main.Logger.LogInfo($"Changed custom language to {langButton.Title.text} (Base language: {langButton.Language.Name})");
             SaveLastLanguage(customLanguage);

@@ -1,4 +1,5 @@
-﻿using BepInEx;
+﻿global using Object = UnityEngine.Object;
+using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;

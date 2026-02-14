@@ -4,7 +4,6 @@ using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
-using Object = UnityEngine.Object;
 
 namespace LanguageAdder
 {
@@ -17,7 +16,7 @@ namespace LanguageAdder
         static void SetLanguageButtonPatch(SettingsLanguageMenu __instance)
         {
             Main.Logger.LogInfo("Awake entered");
-            if (Data.CurrentCustomLanguageId == int.MinValue) return;
+            if (!Data.IsUsingCustomLanguage) return;
             if (!__instance.selectedLangText)
             {
                 Main.Logger.LogWarning("selected language text is null");
@@ -40,14 +39,23 @@ namespace LanguageAdder
             {
                 Data.IsUsingCustomLanguage = false;
                 Main.Logger.LogInfo("Changed vanilla language to " + b.Title.text);
+
+                UnselectAllButtons();
+                b.Button.SelectButton(true);
+
+                __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
             })));
 
             __instance.ButtonParent.SetBoundsMax(__instance.AllButtons.Length * __instance.ButtonHeight - 2f * __instance.ButtonStart - 0.1f, 0f);
 
-            if (Data.CurrentCustomLanguageId == int.MinValue) return;
+            if (!Data.IsUsingCustomLanguage) return;
 
             __instance.SetLanguage(CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageButton);
         }
+
+        [HarmonyPatch(typeof(LanguageSetter), nameof(LanguageSetter.SetLanguage))]
+        [HarmonyPrefix]
+        static bool SelectedLangTextFix() => !Data.IsUsingCustomLanguage;
 
         [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.LateUpdate))]
         [HarmonyPostfix]
@@ -89,7 +97,13 @@ namespace LanguageAdder
             customLanguage.LanguageButton = langButton;
 
             langButton.Button.OnClick = new();
-            langButton.Button.OnClick.AddListener((UnityAction)(() => Data.SetCustomLanguage(customLanguage)));
+            langButton.Button.OnClick.AddListener((UnityAction)(() =>
+            {
+                Data.SetCustomLanguage(customLanguage);
+                UnselectAllButtons();
+                langButton.Button.SelectButton(true);
+                __instance.Close(); // ALSO MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
+            }));
 
             var vector = new Vector3(0, __instance.ButtonStart - __instance.AllButtons.Count * __instance.ButtonHeight, -0.5f);
 
@@ -99,6 +113,11 @@ namespace LanguageAdder
             __instance.AllButtons = new(__instance.AllButtons.AddItem(langButton).ToArray());
 
             return langButton;
+        }
+
+        static void UnselectAllButtons(LanguageSetter __instance)
+        {
+            __instance.AllButtons.ToArray().Do(b => b.Button.SelectButton(false));
         }
 
         #region MOD STAMP
