@@ -131,6 +131,9 @@ namespace LanguageAdder
             }
 
             var languagesJson = File.ReadAllText(RegisteredLangFilePath);
+
+            if (languagesJson.IsNullOrWhiteSpace()) return;
+
             var root = JObject.Parse(languagesJson);
 
             var properties = root.Properties().ToList();
