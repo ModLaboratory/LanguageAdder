@@ -154,6 +154,8 @@ namespace LanguageAdder
                     continue;
                 }
             }
+
+            SetCustomLanguage(CustomLanguage.GetCustomLanguageById(LastCustomLanguage));
         }
 
         public static void SaveLastLanguage(CustomLanguage lang) => LastCustomLanguage = lang;

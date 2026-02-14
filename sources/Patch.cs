@@ -123,7 +123,7 @@ namespace LanguageAdder
         [HarmonyPrefix]
         public static bool GetStringPatch(TranslationController __instance, string id, string defaultStr, Il2CppReferenceArray<Il2CppSystem.Object> parts, ref string __result)
         {
-            if (Data.CurrentCustomLanguageId == int.MinValue) return true;
+            if (!Data.IsUsingCustomLanguage) return true;
 
             __result = Il2CppSystem.String.Format(Data.Root[id]?.ToString() ?? "", parts);
 
