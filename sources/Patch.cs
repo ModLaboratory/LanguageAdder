@@ -1,6 +1,7 @@
 ﻿using Cpp2IL.Core.Extensions;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
@@ -35,12 +36,12 @@ namespace LanguageAdder
             var vanillaLanguageButtons = __instance.AllButtons.ToList().Clone();
 
             CustomLanguage.AllLanguages.ForEach(l => CreateLanguageButton(__instance, l.LanguageName, ToTranslationImageSet(l.BaseLanguage)));
-            vanillaLanguageButtons.ToList().ForEach(b => b.Button.OnClick.AddListener((UnityAction)(() =>
+            vanillaLanguageButtons.ToList().ForEach(b => b.Button.OnClick.AddListener(new Action(() =>
             {
                 Data.IsUsingCustomLanguage = false;
                 Main.Logger.LogInfo("Changed vanilla language to " + b.Title.text);
 
-                UnselectAllButtons();
+                UnselectAllButtons(__instance);
                 b.Button.SelectButton(true);
 
                 __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
@@ -97,10 +98,10 @@ namespace LanguageAdder
             customLanguage.LanguageButton = langButton;
 
             langButton.Button.OnClick = new();
-            langButton.Button.OnClick.AddListener((UnityAction)(() =>
+            langButton.Button.OnClick.AddListener(new Action(() =>
             {
                 Data.SetCustomLanguage(customLanguage);
-                UnselectAllButtons();
+                UnselectAllButtons(__instance);
                 langButton.Button.SelectButton(true);
                 __instance.Close(); // ALSO MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
             }));
