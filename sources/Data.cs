@@ -1,14 +1,10 @@
-﻿using BepInEx.Unity.IL2CPP.Utils.Collections;
-using Il2CppSystem.Linq;
+﻿using Il2CppSystem.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using static LanguageAdder.Main;
 
 namespace LanguageAdder
 {
@@ -37,6 +33,22 @@ namespace LanguageAdder
         /// Get current custom language ID.
         /// </summary>
         public static int CurrentCustomLanguageId { get; set; } = int.MinValue;
+        public static bool IsUsingCustomLanguage
+        {
+            get => CurrentCustomLanguageId != int.MinValue;
+            set
+            {
+                if (!value)
+                {
+                    CurrentCustomLanguageId = int.MinValue;
+                    Main.Logger.LogInfo($"Manually set {nameof(IsUsingCustomLanguage)} to false");
+                }
+                else
+                {
+                    Main.Logger.LogWarning($"No need to set {nameof(IsUsingCustomLanguage)} to true");
+                }
+            }
+        }
         public static JObject Root { get; set; } = new();
 
         public static CustomLanguage LastCustomLanguage
@@ -44,12 +56,12 @@ namespace LanguageAdder
             get
             {
                 CustomLanguage lastCustomLang = null;
+
                 if (File.Exists(LastLanguageFilePath))
                 {
                     try
                     {
-                        using StreamReader reader = File.OpenText(LastLanguageFilePath);
-                        lastCustomLang = CustomLanguage.GetCustomLanguageById(int.Parse(reader.ReadLine()));
+                        lastCustomLang = CustomLanguage.GetCustomLanguageById(int.Parse(File.ReadAllText(LastLanguageFilePath)));
                     }
                     catch (Exception e)
                     {
@@ -58,17 +70,16 @@ namespace LanguageAdder
                 }
                 else
                 {
-                    using StreamWriter writer = File.CreateText(LastLanguageFilePath);
-                    writer.WriteLine(CurrentCustomLanguageId);
+                    File.WriteAllText(LastLanguageFilePath, CurrentCustomLanguageId.ToString());
                 }
-                return CurrentCustomLanguageId == int.MinValue ? lastCustomLang : CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId);
+
+                return !IsUsingCustomLanguage ? lastCustomLang : CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId);
             }
             set
             {
                 try
                 {
-                    using StreamWriter writer = File.CreateText(LastLanguageFilePath);
-                    writer.WriteLine(value.LanguageId);
+                    File.WriteAllText(LastLanguageFilePath, value.LanguageId.ToString());
                 }
                 catch (Exception e)
                 {

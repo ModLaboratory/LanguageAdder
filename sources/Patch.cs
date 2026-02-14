@@ -1,11 +1,7 @@
 ﻿using Cpp2IL.Core.Extensions;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2CppSystem;
-using System;
-using System.IO;
 using System.Linq;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using Object = UnityEngine.Object;
@@ -24,11 +20,11 @@ namespace LanguageAdder
             if (Data.CurrentCustomLanguageId == int.MinValue) return;
             if (!__instance.selectedLangText)
             {
-                Main.Logger.LogWarning("selectedLangText is null");
+                Main.Logger.LogWarning("selected language text is null");
                 return;
             }
             __instance.selectedLangText.text = CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageName;
-            Main.Logger.LogInfo("Set selectLangText success");
+            Main.Logger.LogInfo("Set text success");
         }
         #endregion
 
@@ -42,13 +38,14 @@ namespace LanguageAdder
             CustomLanguage.AllLanguages.ForEach(l => CreateLanguageButton(__instance, l.LanguageName, ToTranslationImageSet(l.BaseLanguage)));
             vanillaLanguageButtons.ToList().ForEach(b => b.Button.OnClick.AddListener((UnityAction)(() =>
             {
-                Data.CurrentCustomLanguageId = int.MinValue; // set lang id to min value when vanilla langs are set
+                Data.IsUsingCustomLanguage = false;
                 Main.Logger.LogInfo("Changed vanilla language to " + b.Title.text);
             })));
 
             __instance.ButtonParent.SetBoundsMax(__instance.AllButtons.Length * __instance.ButtonHeight - 2f * __instance.ButtonStart - 0.1f, 0f);
 
             if (Data.CurrentCustomLanguageId == int.MinValue) return;
+
             __instance.SetLanguage(CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageButton);
         }
 
@@ -76,40 +73,42 @@ namespace LanguageAdder
         }
         #endregion
 
-        static void CreateLanguageButton(LanguageSetter __instance, string langName, TranslatedImageSet baseLang)
+        private static LanguageButton CreateLanguageButton(LanguageSetter __instance, string langName, TranslatedImageSet baseLang)
         {
             var lastButtonTransform = __instance.AllButtons.LastOrDefault().transform;
-            if (!lastButtonTransform && __instance.AllButtons != null && __instance.AllButtons.Count < 2) return;
+            if (!lastButtonTransform && __instance.AllButtons != null && __instance.AllButtons.Count < 2) return null;
             var buttonPosPrefab = lastButtonTransform.transform.localPosition;
 
-            var lang = Object.Instantiate(__instance.ButtonPrefab, lastButtonTransform.parent);
+            var langButton = Object.Instantiate(__instance.ButtonPrefab, lastButtonTransform.parent);
 
-            lang.Title.text = langName;
-            lang.Language = baseLang;
+            langButton.Title.text = langName;
+            langButton.Language = baseLang;
 
-            var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == lang.Title.text && l.BaseLanguage == lang.Language.ToSupportedLangs()).FirstOrDefault();
-            
-            customLanguage.LanguageButton = lang;
+            var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == langButton.Title.text && l.BaseLanguage == langButton.Language.ToSupportedLangs()).FirstOrDefault();
 
-            lang.Button.OnClick = new();
-            lang.Button.OnClick.AddListener((UnityAction)(() => Data.SetCustomLanguage(customLanguage)));
+            customLanguage.LanguageButton = langButton;
+
+            langButton.Button.OnClick = new();
+            langButton.Button.OnClick.AddListener((UnityAction)(() => Data.SetCustomLanguage(customLanguage)));
 
             var vector = new Vector3(0, __instance.ButtonStart - __instance.AllButtons.Count * __instance.ButtonHeight, -0.5f);
-            
-            lang.transform.localPosition = vector;
-            lang.gameObject.SetActive(true);
 
-            __instance.AllButtons = new(__instance.AllButtons.AddItem(lang).ToArray());
+            langButton.transform.localPosition = vector;
+            langButton.gameObject.SetActive(true);
+
+            __instance.AllButtons = new(__instance.AllButtons.AddItem(langButton).ToArray());
+
+            return langButton;
         }
 
         #region MOD STAMP
-        [HarmonyPatch(typeof(ModManager),nameof(ModManager.LateUpdate))]
+        [HarmonyPatch(typeof(ModManager), nameof(ModManager.LateUpdate))]
         [HarmonyPostfix]
         static void ShowModStampPatch(ModManager __instance) => __instance.ShowModStamp();
         #endregion
 
         #region INITIALIZE
-        [HarmonyPatch(typeof(TranslationController),nameof(TranslationController.Initialize))]
+        [HarmonyPatch(typeof(TranslationController), nameof(TranslationController.Initialize))]
         [HarmonyPostfix]
         static void InitCustomLanguage(TranslationController __instance)
         {
@@ -119,12 +118,13 @@ namespace LanguageAdder
         }
         #endregion
 
+        #region TRANSLATION CONTROLLER PATCH
         [HarmonyPatch(typeof(TranslationController), nameof(TranslationController.GetString), new[] { typeof(string), typeof(string), typeof(Il2CppReferenceArray<Il2CppSystem.Object>) })]
         [HarmonyPrefix]
         public static bool GetStringPatch(TranslationController __instance, string id, string defaultStr, Il2CppReferenceArray<Il2CppSystem.Object> parts, ref string __result)
         {
             if (Data.CurrentCustomLanguageId == int.MinValue) return true;
-            
+
             __result = Il2CppSystem.String.Format(Data.Root[id]?.ToString() ?? "", parts);
 
             if (__result.IsNullOrWhiteSpace())
@@ -136,12 +136,6 @@ namespace LanguageAdder
 
             return false;
         }
-
-        [HarmonyPatch(typeof(TranslationController), nameof(TranslationController.SetLanguage))]
-        [HarmonyPostfix]
-        public static void SetLanguagePatch(SupportedLangs language)
-        {
-            Main.Logger.LogInfo("Set vanilla language to: " + language);
-        }
+        #endregion
     }
 }

@@ -14,7 +14,6 @@ namespace LanguageAdder
         public static ManualLogSource Logger { get; private set; }
         public static Harmony Harmony { get; private set; }
 
-
         public override void Load()
         {
             Logger = Log;
@@ -51,7 +50,8 @@ namespace LanguageAdder
 
             try
             {
-                if (!File.Exists(RegisteredLangFilePath)) using (File.Create(RegisteredLangFilePath)) { }
+                if (!File.Exists(RegisteredLangFilePath))
+                    File.WriteAllText(RegisteredLangFilePath, "");
             }
             catch (Exception e)
             {
