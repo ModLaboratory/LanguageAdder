@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using static Il2CppSystem.Net.Http.Headers.Parser;
 
 namespace LanguageAdder
 {
@@ -39,7 +40,7 @@ namespace LanguageAdder
 
             CustomLanguage.AllLanguages.ForEach(l =>
             {
-                var button = CreateLanguageButton(__instance, l.LanguageName, ToTranslationImageSet(l.BaseLanguage));
+                var button = CreateLanguageButton(__instance, l.LanguageName, TranslationController.Instance.Languages[l.BaseLanguage]);
                 if (Data.CurrentCustomLanguageId == l.LanguageId)
                 {
                     UnselectAllButtons(__instance);
@@ -47,6 +48,7 @@ namespace LanguageAdder
                     l.LanguageButton.Title.color = Color.green;
                 }
             });
+
             vanillaLanguageButtons.ToList().ForEach(b => b.Button.OnClick.AddListener(new Action(() =>
             {
                 Data.IsUsingCustomLanguage = false;
@@ -54,8 +56,10 @@ namespace LanguageAdder
 
                 UnselectAllButtons(__instance);
                 b.Button.SelectButton(true);
+                b.Title.color = Color.green;
 
                 __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix BECAUSE Close() IS CALLED IN SetLanguage(LanguageButton)
+                TranslationController.Instance.SetLanguage(b.Language.languageID);
             })));
 
             __instance.ButtonParent.SetBoundsMax(__instance.AllButtons.Length * __instance.ButtonHeight - 2f * __instance.ButtonStart - 0.1f, 0f);
@@ -73,23 +77,10 @@ namespace LanguageAdder
         [HarmonyPostfix]
         static void EnterMenuButtonTextPatch()
         {
-            SettingsLanguageMenu button;
-            if (button = DestroyableSingleton<SettingsLanguageMenu>.Instance)
-            {
-                if (!Data.IsUsingCustomLanguage || !button.selectedLangText) return;
-                button.selectedLangText.text = CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageName;
-            }
-        }
-        #endregion
+            var setterMenu = Object.FindObjectOfType<LanguageSetter>(true);
 
-        #region CONVERSIONS
-        internal static TranslatedImageSet ToTranslationImageSet(SupportedLangs lang) => TranslationController.Instance.Languages[lang];
-        internal static SupportedLangs? ToSupportedLangs(TranslatedImageSet lang)
-        {
-            foreach (var pair in TranslationController.Instance.Languages)
-                if (pair.Value == lang)
-                    return pair.Key;
-            return null;
+            if (setterMenu && setterMenu.parentLangButton && Data.IsUsingCustomLanguage)
+                setterMenu.parentLangButton.text = CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageName;
         }
         #endregion
 
@@ -104,7 +95,7 @@ namespace LanguageAdder
             langButton.Title.text = langName;
             langButton.Language = baseLang;
 
-            var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == langButton.Title.text && l.BaseLanguage == langButton.Language.ToSupportedLangs()).FirstOrDefault();
+            var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == langButton.Title.text && l.BaseLanguage == langButton.Language.languageID).FirstOrDefault();
 
             customLanguage.LanguageButton = langButton;
 

@@ -121,7 +121,7 @@ namespace LanguageAdder
                 {
                     if (instance) btns.Remove(l.LanguageButton);
                     CustomLanguage.AllLanguages.Remove(l);
-                    if (l.LanguageButton) UnityEngine.Object.Destroy(l.LanguageButton.gameObject);
+                    if (l.LanguageButton) Object.Destroy(l.LanguageButton.gameObject);
                 });
 
                 if (instance) instance.AllButtons = btns.ToArray();

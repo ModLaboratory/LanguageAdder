@@ -28,7 +28,7 @@ A plugin to add your custom languages.
 
 - `Language1` `Language2` is the name of the language, which will be shown in the menu.
 - `.\\Language_DATA\\lang1.lang` `.\\Language_DATA\\lang2.lang` is the path of the file.
-- `English` is the name of the language that your language is based on. (Supported game native languages: `English, Latam, Brazilian, Portuguese, Korean, Russian, Dutch, Filipino, French, German, Italian, Japanese, Spanish, SChinese, TChinese, Irish`)
+- `English` is the name of the language that your language is based on. (Acceptable values: `English, Latam, Brazilian, Portuguese, Korean, Russian, Dutch, Filipino, French, German, Italian, Japanese, Spanish, SChinese, TChinese, Irish`)
 
 7. Open your game if you quitted the game; Otherwise, press `F2` to reload language.
 8. Then you can switch your language in settings!
