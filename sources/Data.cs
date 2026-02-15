@@ -99,6 +99,9 @@ namespace LanguageAdder
                 var key = stringName.ToString();
                 var value = TranslationController.Instance.GetString(stringName);
 
+                if (value == "STRMISS")
+                    value = ""; // Let the game to proceed missing strings
+
                 root[key] = value;
             }
 

@@ -16,7 +16,7 @@ namespace LanguageAdder
         [HarmonyPostfix]
         static void SetLanguageButtonPatch(SettingsLanguageMenu __instance)
         {
-            Main.Logger.LogInfo("Awake entered");
+            Main.Logger.LogInfo($"===== {nameof(SettingsLanguageMenu)}.{nameof(SettingsLanguageMenu.Awake)}() =====");
             if (!Data.IsUsingCustomLanguage) return;
             if (!__instance.selectedLangText)
             {
@@ -33,9 +33,20 @@ namespace LanguageAdder
         [HarmonyPostfix]
         static void SetLangaugeMenuPatch(LanguageSetter __instance)
         {
+            Main.Logger.LogInfo($"===== {nameof(LanguageSetter)}.{nameof(LanguageSetter.Start)}() =====");
+
             var vanillaLanguageButtons = __instance.AllButtons.ToList().Clone();
 
-            CustomLanguage.AllLanguages.ForEach(l => CreateLanguageButton(__instance, l.LanguageName, ToTranslationImageSet(l.BaseLanguage)));
+            CustomLanguage.AllLanguages.ForEach(l =>
+            {
+                var button = CreateLanguageButton(__instance, l.LanguageName, ToTranslationImageSet(l.BaseLanguage));
+                if (Data.CurrentCustomLanguageId == l.LanguageId)
+                {
+                    UnselectAllButtons(__instance);
+                    l.LanguageButton.Button.SelectButton(true);
+                    l.LanguageButton.Title.color = Color.green;
+                }
+            });
             vanillaLanguageButtons.ToList().ForEach(b => b.Button.OnClick.AddListener(new Action(() =>
             {
                 Data.IsUsingCustomLanguage = false;
@@ -44,7 +55,7 @@ namespace LanguageAdder
                 UnselectAllButtons(__instance);
                 b.Button.SelectButton(true);
 
-                __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
+                __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix BECAUSE Close() IS CALLED IN SetLanguage(LanguageButton)
             })));
 
             __instance.ButtonParent.SetBoundsMax(__instance.AllButtons.Length * __instance.ButtonHeight - 2f * __instance.ButtonStart - 0.1f, 0f);
@@ -65,7 +76,7 @@ namespace LanguageAdder
             SettingsLanguageMenu button;
             if (button = DestroyableSingleton<SettingsLanguageMenu>.Instance)
             {
-                if (Data.CurrentCustomLanguageId == int.MinValue || !button.selectedLangText) return;
+                if (!Data.IsUsingCustomLanguage || !button.selectedLangText) return;
                 button.selectedLangText.text = CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageName;
             }
         }
@@ -101,8 +112,11 @@ namespace LanguageAdder
             langButton.Button.OnClick.AddListener(new Action(() =>
             {
                 Data.SetCustomLanguage(customLanguage);
+
                 UnselectAllButtons(__instance);
                 langButton.Button.SelectButton(true);
+                langButton.Title.color = Color.green;
+
                 __instance.Close(); // ALSO MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
             }));
 
@@ -118,7 +132,11 @@ namespace LanguageAdder
 
         static void UnselectAllButtons(LanguageSetter __instance)
         {
-            __instance.AllButtons.ToArray().Do(b => b.Button.SelectButton(false));
+            __instance.AllButtons.ToArray().Do(b =>
+            {
+                b.Button.SelectButton(false);
+                b.Title.color = Color.white;
+            });
         }
 
         #region MOD STAMP
