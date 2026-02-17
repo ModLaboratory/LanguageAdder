@@ -4,7 +4,7 @@ A plugin to add your custom languages.
 
 ## How To Add Your Custom Languages
 0. Get the latest mod release and install it.
-1. Start your game.
+1. Open Among Us.
 2. After the game shows you main menu, open your Among Us game root directory. Normally, you can see a `Language_Data` folder in your game root directory.
 3. In this folder, there are two files: `(YOUR_CURRENT_GAME_LANGUAGE)_Example.lang` `language.dat`. (Note: when you switched to other languages, an example language file will be automatically generated. You can also press `F1` to generate an example language file in the current game language.)
 4. Copy the example file and rename it.
