@@ -19,8 +19,7 @@ namespace LanguageAdder
         {
             Logger = Log;
             Harmony = new(PluginInfo.PLUGIN_GUID);
-            // Plugin startup logic
-            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+            Logger.LogInfo($"LanguageAdder loaded successfully!");
             AddComponent<KeyboardListener>();
             Harmony.PatchAll();
         }

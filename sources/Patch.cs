@@ -154,7 +154,12 @@ namespace LanguageAdder
         {
             if (!Data.IsUsingCustomLanguage) return true;
 
-            __result = Il2CppSystem.String.Format(Data.Root[id]?.ToString() ?? "", parts);
+            var value = Data.Root[id]?.ToString() ?? "";
+
+            if (parts.Any())
+                __result = Il2CppSystem.String.Format(value, parts);
+            else
+                __result = value;
 
             if (__result.IsNullOrWhiteSpace())
                 __result = Il2CppSystem.String.Format(defaultStr, parts);
