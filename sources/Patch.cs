@@ -1,11 +1,11 @@
-﻿using Cpp2IL.Core.Extensions;
+﻿using AmongUs.Data;
+using Cpp2IL.Core.Extensions;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
-using static Il2CppSystem.Net.Http.Headers.Parser;
 
 namespace LanguageAdder
 {
@@ -79,8 +79,13 @@ namespace LanguageAdder
         {
             var setterMenu = Object.FindObjectOfType<LanguageSetter>(true);
 
-            if (setterMenu && setterMenu.parentLangButton && Data.IsUsingCustomLanguage)
-                setterMenu.parentLangButton.text = CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageName;
+            if (setterMenu && setterMenu.parentLangButton)
+            {
+                if (Data.IsUsingCustomLanguage)
+                    setterMenu.parentLangButton.text = CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageName;
+                else
+                    setterMenu.parentLangButton.text = TranslationController.Instance.Languages[TranslationController.Instance.currentLanguage.languageID].Name;
+            }
         }
         #endregion
 
