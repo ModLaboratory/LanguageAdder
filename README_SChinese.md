@@ -2,7 +2,7 @@
 
 [![latest_release](https://img.shields.io/badge/下载-最新版-blue?logo=github)](https://github.com/ModLaboratory/LanguageAdder/releases/latest)
 
-[English README](.\README.md)
+[English README](README.md)
 
 一个用于在Among Us中添加自定义语言的插件。
 
