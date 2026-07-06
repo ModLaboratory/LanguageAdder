@@ -2,10 +2,14 @@
 using Cpp2IL.Core.Extensions;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Il2CppSystem.Linq;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
+using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
+using UnityEngine.EventSystems;
 
 namespace LanguageAdder
 {
@@ -29,7 +33,7 @@ namespace LanguageAdder
         }
         #endregion
 
-        #region PATCH LANGUAGE MENU
+        #region LANGUAGE MENU PATCH
         [HarmonyPatch(typeof(LanguageSetter), nameof(LanguageSetter.Start))]
         [HarmonyPostfix]
         static void SetLangaugeMenuPatch(LanguageSetter __instance)
@@ -62,6 +66,7 @@ namespace LanguageAdder
                 TranslationController.Instance.SetLanguage(b.Language.languageID);
             })));
 
+            // Set the scrolling range of the scroller
             __instance.ButtonParent.SetBoundsMax(__instance.AllButtons.Length * __instance.ButtonHeight - 2f * __instance.ButtonStart - 0.1f, 0f);
 
             if (!Data.IsUsingCustomLanguage) return;
@@ -89,6 +94,7 @@ namespace LanguageAdder
         }
         #endregion
 
+        #region LANGUAGE BUTTON CREATION
         private static LanguageButton CreateLanguageButton(LanguageSetter __instance, string langName, TranslatedImageSet baseLang)
         {
             var lastButtonTransform = __instance.AllButtons.LastOrDefault().transform;
@@ -99,11 +105,11 @@ namespace LanguageAdder
 
             langButton.Title.text = langName;
             langButton.Language = baseLang;
-
-            var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == langButton.Title.text && l.BaseLanguage == langButton.Language.languageID).FirstOrDefault();
-
+            Main.Logger.LogInfo(1);
+            var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == langName).FirstOrDefault();
+            Main.Logger.LogInfo(customLanguage == null);
             customLanguage.LanguageButton = langButton;
-
+            Main.Logger.LogInfo(1);
             langButton.Button.OnClick = new();
             langButton.Button.OnClick.AddListener(new Action(() =>
             {
@@ -115,12 +121,12 @@ namespace LanguageAdder
 
                 __instance.Close(); // ALSO MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
             }));
-
+            Main.Logger.LogInfo(1);
             var vector = new Vector3(0, __instance.ButtonStart - __instance.AllButtons.Count * __instance.ButtonHeight, -0.5f);
-
+            Main.Logger.LogInfo(1);
             langButton.transform.localPosition = vector;
             langButton.gameObject.SetActive(true);
-
+            Main.Logger.LogInfo(1);
             __instance.AllButtons = new(__instance.AllButtons.AddItem(langButton).ToArray());
 
             return langButton;
@@ -134,6 +140,7 @@ namespace LanguageAdder
                 b.Title.color = Color.white;
             });
         }
+        #endregion
 
         #region MOD STAMP
         [HarmonyPatch(typeof(ModManager), nameof(ModManager.LateUpdate))]
@@ -159,7 +166,7 @@ namespace LanguageAdder
         {
             if (!Data.IsUsingCustomLanguage) return true;
 
-            var value = Data.Root[id]?.ToString() ?? "";
+            var value = Data.LanguageRoot[id]?.ToString() ?? "";
 
             if (parts.Any())
                 __result = Il2CppSystem.String.Format(value, parts);
@@ -176,5 +183,7 @@ namespace LanguageAdder
             return false;
         }
         #endregion
+
+        
     }
 }

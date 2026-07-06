@@ -5,6 +5,7 @@ using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using System;
 using System.IO;
+using System.Linq;
 using static LanguageAdder.Data;
 
 namespace LanguageAdder
@@ -19,9 +20,11 @@ namespace LanguageAdder
         {
             Logger = Log;
             Harmony = new(PluginInfo.PLUGIN_GUID);
-            Logger.LogInfo($"LanguageAdder loaded successfully!");
+
             AddComponent<KeyboardListener>();
             Harmony.PatchAll();
+
+            Logger.LogInfo($"LanguageAdder loaded successfully!");
         }
 
         internal static void CheckCreateFiles(ref bool error)
@@ -55,7 +58,7 @@ namespace LanguageAdder
             }
             catch (Exception e)
             {
-                Logger.LogError($"Error creating register file: {RegisteredLangFilePath}\r\n{e}");
+                Logger.LogError($"Error creating registry file: {RegisteredLangFilePath}\r\n{e}");
                 error = true;
                 return;
             }

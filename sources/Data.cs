@@ -50,7 +50,9 @@ namespace LanguageAdder
                 }
             }
         }
-        public static JObject Root { get; set; } = new();
+
+        public static JObject LanguageRoot { get; set; } = new();
+        public static JArray ReplacementRoot { get; set; } = new();
 
         public static CustomLanguage LastCustomLanguage
         {
@@ -89,7 +91,6 @@ namespace LanguageAdder
             }
         }
 
-
         public static void GenerateCurrentLanguageExampleFile()
         {
             JObject root = new();
@@ -113,7 +114,7 @@ namespace LanguageAdder
         {
             if (CustomLanguage.AllLanguages.Count != 0)
             {
-                LanguageSetter instance = DestroyableSingleton<LanguageSetter>.Instance;
+                var instance = Object.FindObjectOfType<LanguageSetter>(true);
 
                 var btns = instance ? new List<LanguageButton>(instance.AllButtons) : null;
 
@@ -149,11 +150,20 @@ namespace LanguageAdder
                 {
                     var path = property.Value["path"].ToString();
                     var @base = property.Value["base"].ToString();
+                    var forceReplacementConfigPath = "";
+
+                    try
+                    {
+                        forceReplacementConfigPath = property.Value["forceReplacementConfigPath"].ToString();
+                    }
+                    catch
+                    {
+                    }
 
                     if (!Enum.TryParse<SupportedLangs>(@base, out var baseLang))
-                        throw new InvalidDataException($"Invalid {baseLang}");
+                        throw new InvalidDataException($"Invalid {nameof(baseLang)}: {baseLang}");
 
-                    _ = new CustomLanguage(name, path, baseLang);
+                    _ = new CustomLanguage(name, path, baseLang, forceReplacementConfigPath);
                 }
                 catch (Exception e)
                 {
@@ -181,22 +191,35 @@ namespace LanguageAdder
             TranslationController.Instance.SetLanguage(customLanguage.BaseLanguage);
 
             var fullTranslations = File.ReadAllText(CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).FilePath);
-            Root = JObject.Parse(fullTranslations);
+            LanguageRoot = JObject.Parse(fullTranslations);
 
+            if (customLanguage.ForceTextReplacementEnabled)
+            {
+                var replacementRuleConfig = File.ReadAllText(customLanguage.ForceReplacementConfigPath);
+                ReplacementRoot = JsonConvert.DeserializeObject<JArray>(replacementRuleConfig);
+            }
+            
             var menu = Object.FindObjectOfType<SettingsLanguageMenu>(true);
 
-            if (langSetter.parentLangButton)
+            if (langButton && langButton.Title)
             {
-                langSetter.parentLangButton.text = langButton.Title.text;
-            }
-            else
-            {
-                Main.Logger.LogWarning("Null: " + nameof(langSetter.parentLangButton));
+                if (langSetter && langSetter.parentLangButton)
+                {
+                    langSetter.parentLangButton.text = langButton.Title.text;
+                }
+                else
+                {
+                    Main.Logger.LogWarning("Null: " + nameof(LanguageSetter.parentLangButton));
+                    if (menu && menu.selectedLangText)
+                    {
+                        menu.selectedLangText.text = langButton.Title.text;
+                    }
+                }
             }
 
             TranslationController.Instance.ActiveTexts.ToArray().Do(t => t.ResetText()); // Refresh texts
 
-            Main.Logger.LogInfo($"Changed custom language to {langButton.Title.text} (Base language: {langButton.Language.Name})");
+            Main.Logger.LogInfo($"Changed custom language to {CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).LanguageName} (Base language: {CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).BaseLanguage})");
             SaveLastLanguage(customLanguage);
         }
     }
@@ -208,17 +231,21 @@ namespace LanguageAdder
         public string LanguageName { get; init; }
         public string FilePath { get; init; }
         public SupportedLangs BaseLanguage { get; init; }
+        public string ForceReplacementConfigPath { get; init; }
+        public bool ForceTextReplacementEnabled => !ForceReplacementConfigPath.IsNullOrWhiteSpace();
+
         public int LanguageId { get; init; }
         public LanguageButton LanguageButton { get; internal set; }
 
-        public CustomLanguage(string languageName, string filePath, SupportedLangs baseLanguage)
+        public CustomLanguage(string languageName, string filePath, SupportedLangs baseLanguage, string forceReplacementConfigPath = "")
         {
             LanguageName = languageName;
             FilePath = filePath;
             BaseLanguage = baseLanguage;
+            ForceReplacementConfigPath = forceReplacementConfigPath;
             LanguageId = (AllLanguages.LastOrDefault() ?? (int)Enum.GetValues<SupportedLangs>().ToList().LastOrDefault()) + 1;
             AllLanguages.Add(this);
-            Main.Logger.LogInfo($"Language registered: {LanguageName} {FilePath} {BaseLanguage.ToString()}: {LanguageId}");
+            Main.Logger.LogInfo($"Language registered: {LanguageName} {FilePath} {BaseLanguage.ToString()}: {LanguageId} {forceReplacementConfigPath}");
         }
 
         public static CustomLanguage GetCustomLanguageById(int id) => AllLanguages.Where(l => l.LanguageId == id).FirstOrDefault();
