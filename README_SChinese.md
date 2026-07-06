@@ -1,6 +1,6 @@
 # LanguageAdder
 
-[![latest_release](https://img.shields.io/badge/download-latest_release-blue?logo=github)](https://github.com/ModLaboratory/LanguageAdder/releases/latest)
+[![latest_release](https://img.shields.io/badge/ÏÂÔØ-×îÐÂ°æ-blue?logo=github)](https://github.com/ModLaboratory/LanguageAdder/releases/latest)
 
 [English README](.\README.md)
 
