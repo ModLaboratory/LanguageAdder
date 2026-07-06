@@ -184,6 +184,57 @@ namespace LanguageAdder
         }
         #endregion
 
-        
+        [HarmonyPatch(typeof(TMP_Text), nameof(TMP_Text.text), MethodType.Setter)]
+        [HarmonyPrefix]
+        static bool RawTextPatch(TMP_Text __instance, ref string __0)
+        {
+            return !ReplaceCustom(ref __0);
+        }
+
+        public static bool ReplaceCustom(ref string origin)
+        {
+            try
+            {
+                foreach (var item in Data.ReplacementRoot._values)
+                {
+                    var obj = item.Cast<JObject>();
+                    var key = obj["key"].ToString(); // pattern for regex
+                    var value = obj["value"].ToString(); // replacement for regex
+                    var usingRegex = false;
+
+                    try
+                    {
+                        usingRegex = (bool)obj["isRegex"];
+                    }
+                    catch
+                    {
+                    }
+
+                    if (usingRegex)
+                    {
+                        if (Regex.IsMatch(origin, key))
+                        {
+                            origin = Regex.Replace(origin, key, value);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (key == origin)
+                        {
+                            origin = value;
+                            break;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            catch
+            {
+            }
+
+            return true;
+        }
     }
 }
