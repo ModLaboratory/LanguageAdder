@@ -1,6 +1,6 @@
 # LanguageAdder
 
-[![latest_release](https://img.shields.io/badge/download-latest_release-blue?logo=github)](https://github.com/ModLaboratory/LanguageAdder/releases/latest)
+[![latest_release](https://img.shields.io/badge/下载-最新版-blue?logo=github)](https://github.com/ModLaboratory/LanguageAdder/releases/latest)
 
 [简体中文自述文件](.\README_SChinese.md)
 
