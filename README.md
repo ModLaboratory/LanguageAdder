@@ -8,15 +8,15 @@ A plugin for adding your custom languages in Among Us.
 
 ## Demonstrations
 
-![option_menu](image\english\option_menu.png)
+![option_menu](/image/english/option_menu.png)
 
-![lang_list](image\english\lang_list.png)
+![lang_list](/image/english/lang_list.png)
 
-![example](images\english\example.png)
+![example](/images/english/example.png)
 
 An example for replacing hard-coded texts:
 
-![keyboard_binding](images\keyboard_binding.png)
+![keyboard_binding](/images/keyboard_binding.png)
 
 ## Installation
 

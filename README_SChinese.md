@@ -8,15 +8,15 @@
 
 ## 演示
 
-![option_menu](image\chinese\option_menu.png)
+![option_menu](/image/chinese/option_menu.png)
 
-![lang_list](image\chinese\lang_list.png)
+![lang_list](/image/chinese/lang_list.png)
 
-![example](images\chinese\example.png)
+![example](/images/chinese/example.png)
 
 替换硬编码游戏字符串的一个示例：
 
-![keyboard_binding](images\keyboard_binding.png)
+![keyboard_binding](/images/keyboard_binding.png)
 
 ## 安装
 
