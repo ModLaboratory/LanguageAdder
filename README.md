@@ -122,4 +122,4 @@ Configuration used to replace the texts that are hard-coded in the game, which y
 
 - You can press `F1` to generate an example language file of the current game language.
 - You can press `F2` to reload the configuration of custom languages.
-- The custom language setting will be saved. If you restart the game with a custom language set, the mod will help you set the game language to your last custom language.
+- The custom language setting will be saved. If you set a custom language during your last gaming session, the mod will help set the game's language to that custom language you last used once the game opens.
