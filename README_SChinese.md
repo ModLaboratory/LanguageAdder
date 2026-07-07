@@ -8,11 +8,11 @@
 
 ## 演示
 
-![option_menu](/images/chinese/option_menu.png)
+![option_menu](/images/simplified_chinese/option_menu.png)
 
-![lang_list](/images/chinese/lang_list.png)
+![lang_list](/images/simplified_chinese/lang_list.png)
 
-![example](/images/chinese/example.png)
+![example](/images/simplified_chinese/example.png)
 
 替换硬编码游戏字符串的一个示例：
 
