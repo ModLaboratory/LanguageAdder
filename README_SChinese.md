@@ -6,6 +6,18 @@
 
 一个用于在Among Us中添加自定义语言的插件。
 
+## 演示
+
+![option_menu](image\chinese\option_menu.png)
+
+![lang_list](image\chinese\lang_list.png)
+
+![example](images\chinese\example.png)
+
+替换硬编码游戏字符串的一个示例：
+
+![keyboard_binding](images\keyboard_binding.png)
+
 ## 安装
 
 从[发布页面](https://github.com/ModLaboratory/LanguageAdder/releases/latest)获取最新版本的模组，并下载您需要的文件。
@@ -78,7 +90,7 @@
 
 ##### 说明
 
-您可以自由修改翻译文本。
+您可以自由修改翻译文本。~~任意游戏文本都可以替换，也就是说你甚至可以用此方法加入一些外国玩家常用的语录的翻译以实现对外国玩家的消息“自动翻译”。~~
 
 ### `my_force_text_replacement_rule.json`（`Languages.json` 中的 `forceReplacementConfigPath` 字段的值指向的目标文件）
 

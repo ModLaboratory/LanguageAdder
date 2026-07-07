@@ -6,6 +6,18 @@
 
 A plugin for adding your custom languages in Among Us.
 
+## Demonstrations
+
+![option_menu](image\english\option_menu.png)
+
+![lang_list](image\english\lang_list.png)
+
+![example](images\english\example.png)
+
+An example for replacing hard-coded texts:
+
+![keyboard_binding](images\keyboard_binding.png)
+
 ## Installation
 
 Get the latest version of the mod from [release page](https://github.com/ModLaboratory/LanguageAdder/releases/latest) and download the file you need.
@@ -78,7 +90,7 @@ The translations of your custom language. You should rename it like `MyOwnLangua
 
 ##### Description
 
-You can modify the translation texts freely.
+You can modify the translation texts freely.~~Any in-game text can be replaced, which means you can even use this method to add translations of phrases commonly used by foreign players, thereby achieving "automatic translation" of messages from foreign players.~~
 
 ### `my_force_text_replacement_rule.json` (The target file that the field `forceReplacementConfigPath` in `Languages.json` points to)
 
