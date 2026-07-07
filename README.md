@@ -60,7 +60,7 @@ The main cofiguration of your custom languages.
 - `Language1` `Language2` is the name of the language, which will be shown in the menu.
 - Field `path`: The target file of your translation. In the example above, `.\\Language_DATA\\lang1.lang` `.\\Language_DATA\\lang2.lang` is the path of the file.
 - Field `base`: The vanilla language that your custom language is based on. In the example above, `English` is the name of the language that your language is based on. (Acceptable values: `English, Latam, Brazilian, Portuguese, Korean, Russian, Dutch, Filipino, French, German, Italian, Japanese, Spanish, SChinese, TChinese, Irish`)
-- Field `forceReplacementConfigPath`: Optional. The value is the path of the target configuration file that records the rule to replace the hard-coded game text. That is to say, you can't change the text by only editing the translation file that field `path` points to (e.g. Keyboard Binding Settings). 
+- Field `forceReplacementConfigPath`: Optional. The value is the path of the target configuration file that records the rule to replace the hard-coded game text. That is to say, you can't find the corresponding translation texts in the translation file that field `path` points to (e.g. Keyboard Binding Settings). 
 
 ### `[LANGUAGE]_Example.lang`
 
