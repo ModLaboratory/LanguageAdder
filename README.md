@@ -8,9 +8,9 @@ A plugin for adding your custom languages in Among Us.
 
 ## Demonstrations
 
-![option_menu](/image/english/option_menu.png)
+![option_menu](/images/english/option_menu.png)
 
-![lang_list](/image/english/lang_list.png)
+![lang_list](/images/english/lang_list.png)
 
 ![example](/images/english/example.png)
 

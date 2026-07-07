@@ -8,9 +8,9 @@
 
 ## бнЪО
 
-![option_menu](/image/chinese/option_menu.png)
+![option_menu](/images/chinese/option_menu.png)
 
-![lang_list](/image/chinese/lang_list.png)
+![lang_list](/images/chinese/lang_list.png)
 
 ![example](/images/chinese/example.png)
 
