@@ -90,7 +90,7 @@ The translations of your custom language. You should rename it like `MyOwnLangua
 
 ##### Description
 
-You can modify the translation texts freely.~~Any in-game text can be replaced, which means you can even use this method to add translations of phrases commonly used by foreign players, thereby achieving "automatic translation" of messages from foreign players.~~
+You can modify the translation texts freely. ~~Any in-game text can be replaced, which means you can even use this method to add translations of phrases commonly used by foreign players, thereby achieving "automatic translation" of messages from foreign players.~~
 
 ### `my_force_text_replacement_rule.json` (The target file that the field `forceReplacementConfigPath` in `Languages.json` points to)
 
