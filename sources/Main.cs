@@ -27,16 +27,17 @@ namespace LanguageAdder
             Logger.LogInfo($"LanguageAdder loaded successfully!");
         }
 
-        internal static void CheckCreateFiles(ref bool error)
+        internal static void CheckCreateFiles(ref bool hasError)
         {
             try
             {
-                if (!Directory.Exists(DataFolderPath)) Directory.CreateDirectory(DataFolderPath);
+                if (!Directory.Exists(DataFolderPath)) 
+                    Directory.CreateDirectory(DataFolderPath);
             }
             catch (Exception e)
             {
                 Logger.LogError($"Error creating data folder: {DataFolderPath}\r\n{e}");
-                error = true;
+                hasError = true;
                 return;
             }
 
@@ -47,7 +48,7 @@ namespace LanguageAdder
             catch (Exception e)
             {
                 Logger.LogError($"Error creating example file: {ExampleLangFilePath}\r\n{e}");
-                error = true;
+                hasError = true;
                 return;
             }
 
@@ -59,7 +60,7 @@ namespace LanguageAdder
             catch (Exception e)
             {
                 Logger.LogError($"Error creating registry file: {RegisteredLangFilePath}\r\n{e}");
-                error = true;
+                hasError = true;
                 return;
             }
         }

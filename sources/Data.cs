@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 namespace LanguageAdder
 {
@@ -50,6 +51,7 @@ namespace LanguageAdder
                 }
             }
         }
+        public static CustomLanguage CurrentCustomLanguage => CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId);
 
         public static JObject LanguageRoot { get; set; } = new();
         public static JArray ReplacementRoot { get; set; } = new();
@@ -58,25 +60,28 @@ namespace LanguageAdder
         {
             get
             {
+                int customLanguageId = -1;
                 CustomLanguage lastCustomLang = null;
 
                 if (File.Exists(LastLanguageFilePath))
                 {
                     try
                     {
-                        lastCustomLang = CustomLanguage.GetCustomLanguageById(int.Parse(File.ReadAllText(LastLanguageFilePath)));
+                        customLanguageId = int.Parse(File.ReadAllText(LastLanguageFilePath));
                     }
                     catch (Exception e)
                     {
                         Main.Logger.LogError("Error reading last custom language: " + e);
                     }
+
+                    lastCustomLang = CustomLanguage.GetCustomLanguageById(customLanguageId);
                 }
                 else
                 {
                     File.WriteAllText(LastLanguageFilePath, CurrentCustomLanguageId.ToString());
                 }
 
-                return !IsUsingCustomLanguage ? lastCustomLang : CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId);
+                return IsUsingCustomLanguage ? CurrentCustomLanguage : lastCustomLang;
             }
             set
             {
@@ -101,7 +106,7 @@ namespace LanguageAdder
                 var value = TranslationController.Instance.GetString(stringName);
 
                 if (value == "STRMISS")
-                    value = ""; // Let the game to proceed missing strings
+                    value = ""; // Let the game proceed missing strings
 
                 root[key] = value;
             }
@@ -112,13 +117,19 @@ namespace LanguageAdder
 
         public static void LoadCustomLanguages()
         {
+            if (IsUsingCustomLanguage)
+            {
+                TranslationController.Instance.SetLanguage(CurrentCustomLanguage.BaseLanguage);
+                IsUsingCustomLanguage = false;
+            }
+
             if (CustomLanguage.AllLanguages.Count != 0)
             {
                 var instance = Object.FindObjectOfType<LanguageSetter>(true);
 
                 var btns = instance ? new List<LanguageButton>(instance.AllButtons) : null;
 
-                CustomLanguage.AllLanguages.ForEach(l =>
+                CustomLanguage.AllLanguages.ForEach(l => // Exception
                 {
                     if (instance) btns.Remove(l.LanguageButton);
                     CustomLanguage.AllLanguages.Remove(l);
@@ -167,12 +178,15 @@ namespace LanguageAdder
                 }
                 catch (Exception e)
                 {
-                    Main.Logger.LogError("Invalid language registry for: " + name + "with " + e);
+                    Main.Logger.LogError("Invalid language registry for: " + name + " with " + e);
                     continue;
                 }
             }
 
-            SetCustomLanguage(CustomLanguage.GetCustomLanguageById(LastCustomLanguage));
+            SetCustomLanguage(LastCustomLanguage);
+
+            if (SceneManager.GetActiveScene().name == Constants.MAIN_MENU_SCENE)
+                SceneManager.LoadScene(Constants.MAIN_MENU_SCENE); // Reload the main menu
         }
 
         public static void SaveLastLanguage(CustomLanguage lang) => LastCustomLanguage = lang;
@@ -248,7 +262,7 @@ namespace LanguageAdder
             Main.Logger.LogInfo($"Language registered: {LanguageName} {FilePath} {BaseLanguage.ToString()}: {LanguageId} {forceReplacementConfigPath}");
         }
 
-        public static CustomLanguage GetCustomLanguageById(int id) => AllLanguages.Where(l => l.LanguageId == id).FirstOrDefault();
+        public static CustomLanguage GetCustomLanguageById(int id) => AllLanguages.FirstOrDefault(l => l.LanguageId == id);
 
         public static implicit operator int(CustomLanguage l) => l.LanguageId;
     }

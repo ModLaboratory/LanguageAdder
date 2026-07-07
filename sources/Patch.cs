@@ -63,7 +63,7 @@ namespace LanguageAdder
                 b.Title.color = Color.green;
 
                 __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix BECAUSE Close() IS CALLED IN SetLanguage(LanguageButton)
-                TranslationController.Instance.SetLanguage(b.Language.languageID);
+                //TranslationController.Instance.SetLanguage(b.Language.languageID);
             })));
 
             // Set the scrolling range of the scroller
@@ -105,11 +105,11 @@ namespace LanguageAdder
 
             langButton.Title.text = langName;
             langButton.Language = baseLang;
-            Main.Logger.LogInfo(1);
+
             var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == langName).FirstOrDefault();
-            Main.Logger.LogInfo(customLanguage == null);
+            
             customLanguage.LanguageButton = langButton;
-            Main.Logger.LogInfo(1);
+            
             langButton.Button.OnClick = new();
             langButton.Button.OnClick.AddListener(new Action(() =>
             {
@@ -121,12 +121,12 @@ namespace LanguageAdder
 
                 __instance.Close(); // ALSO MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
             }));
-            Main.Logger.LogInfo(1);
+            
             var vector = new Vector3(0, __instance.ButtonStart - __instance.AllButtons.Count * __instance.ButtonHeight, -0.5f);
-            Main.Logger.LogInfo(1);
+            
             langButton.transform.localPosition = vector;
             langButton.gameObject.SetActive(true);
-            Main.Logger.LogInfo(1);
+            
             __instance.AllButtons = new(__instance.AllButtons.AddItem(langButton).ToArray());
 
             return langButton;
@@ -153,9 +153,9 @@ namespace LanguageAdder
         [HarmonyPostfix]
         static void InitCustomLanguage(TranslationController __instance)
         {
-            bool error = false;
-            Main.CheckCreateFiles(ref error);
-            if (!error) Data.LoadCustomLanguages();
+            bool hasError = false;
+            Main.CheckCreateFiles(ref hasError);
+            if (!hasError) Data.LoadCustomLanguages();
         }
         #endregion
 
@@ -184,12 +184,10 @@ namespace LanguageAdder
         }
         #endregion
 
+        #region HARD-CODED TEXT REPLACEMENT
         [HarmonyPatch(typeof(TMP_Text), nameof(TMP_Text.text), MethodType.Setter)]
         [HarmonyPrefix]
-        static bool RawTextPatch(TMP_Text __instance, ref string __0)
-        {
-            return !ReplaceCustom(ref __0);
-        }
+        static bool HardcodedTextPatch(TMP_Text __instance, [HarmonyArgument(0)] ref string value) => !ReplaceCustom(ref value);
 
         public static bool ReplaceCustom(ref string origin)
         {
@@ -236,5 +234,6 @@ namespace LanguageAdder
 
             return true;
         }
+        #endregion
     }
 }
