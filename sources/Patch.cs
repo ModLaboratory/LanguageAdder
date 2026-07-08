@@ -42,41 +42,33 @@ namespace LanguageAdder
         [HarmonyPostfix]
         static void SetLangaugeMenuPatch(LanguageSetter __instance)
         {
-            Main.Logger.LogInfo($"===== {nameof(LanguageSetter)}.{nameof(LanguageSetter.Start)}() =====");
+            Main.Logger.LogInfo($"===== {nameof(LanguageSetter)}::{nameof(LanguageSetter.Start)}() =====");
 
-            var vanillaLanguageButtons = __instance.AllButtons.ToList().Clone();
+            var vanillaLanguageButtons = __instance.AllButtons.Where(button => TranslationController.Instance.Languages.ContainsValue(button.Language));
 
+            // Highlight custom language button if selected
             CustomLanguage.AllLanguages.ForEach(language =>
             {
                 var button = CreateLanguageButton(__instance, language.LanguageName, TranslationController.Instance.Languages[language.BaseLanguage]);
+                
                 if (Data.CurrentCustomLanguage == language)
-                {
-                    UnselectAllButtons(__instance);
-                    language.LanguageButton.Button.SelectButton(true);
-                    language.LanguageButton.Title.color = Color.green;
-                }
+                    __instance.SetLanguage(language.LanguageButton);
             });
 
-            vanillaLanguageButtons.ToList().ForEach(b => b.Button.OnClick.AddListener(new Action(() =>
+            // Add custom logic to vanilla language behaviors
+            vanillaLanguageButtons.ToList().ForEach(button => button.Button.OnClick.AddListener(new Action(() =>
             {
                 Data.IsUsingCustomLanguage = false;
-                Main.Logger.LogInfo("Changed vanilla language to " + b.Title.text);
+                Main.Logger.LogInfo("Changed vanilla language to " + button.Title.text);
 
-                UnselectAllButtons(__instance);
-                b.Button.SelectButton(true);
-                b.Title.color = Color.green;
-
+                __instance.SetLanguage(button); // If we not do so, selecting vanilla language after selecting custom language wont work and you have to click vanilla language button twice to let the game apply language change
                 __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix BECAUSE Close() IS CALLED IN SetLanguage(LanguageButton)
                 
-                Data.RecordLastCustomLanguage(null);
+                Data.RecordLastCustomLanguage(null); // Clear last custom language record
             })));
 
             // Set the scrolling range of the scroller
             __instance.ButtonParent.SetBoundsMax(__instance.AllButtons.Length * __instance.ButtonHeight - 2f * __instance.ButtonStart - 0.1f, 0f);
-
-            if (!Data.IsUsingCustomLanguage) return;
-
-            __instance.SetLanguage(Data.CurrentCustomLanguage.LanguageButton);
         }
 
         [HarmonyPatch(typeof(LanguageSetter), nameof(LanguageSetter.SetLanguage))]
@@ -132,12 +124,12 @@ namespace LanguageAdder
             langButton.transform.localPosition = vector;
             langButton.gameObject.SetActive(true);
             
-            __instance.AllButtons = new(__instance.AllButtons.AddItem(langButton).ToArray());
+            __instance.AllButtons = new(__instance.AllButtons.AddItem(langButton).ToArray()); // Add new button to vanilla button list
 
             return langButton;
         }
 
-        static void UnselectAllButtons(LanguageSetter __instance)
+        private static void UnselectAllButtons(LanguageSetter __instance)
         {
             __instance.AllButtons.ToArray().Do(b =>
             {
