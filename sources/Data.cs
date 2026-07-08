@@ -31,18 +31,19 @@ namespace LanguageAdder
         public const string LastLanguageFileName = "LastLanguage.dat";
         public static string LastLanguageFilePath => $@"{DataFolderPath}\{LastLanguageFileName}";
 
-        /// <summary>
-        /// Get current custom language ID.
-        /// </summary>
-        public static int CurrentCustomLanguageId { get; set; } = int.MinValue;
+
+        private static int _currentCustomLanguageId = int.MinValue;
+
+        public static CustomLanguage CurrentCustomLanguage => CustomLanguage.GetCustomLanguageById(_currentCustomLanguageId);
+
         public static bool IsUsingCustomLanguage
         {
-            get => CurrentCustomLanguageId != int.MinValue;
+            get => _currentCustomLanguageId != int.MinValue;
             set
             {
                 if (!value)
                 {
-                    CurrentCustomLanguageId = int.MinValue;
+                    _currentCustomLanguageId = int.MinValue;
                     Main.Logger.LogInfo($"Manually set {nameof(IsUsingCustomLanguage)} to false");
                 }
                 else
@@ -51,49 +52,22 @@ namespace LanguageAdder
                 }
             }
         }
-        public static CustomLanguage CurrentCustomLanguage => CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId);
 
         public static JObject LanguageRoot { get; set; } = new();
-        public static JArray ReplacementRoot { get; set; } = new();
+        public static JArray ReplacementRoot { get; set; } = new(); // TODO: Optimize logic
 
-        public static CustomLanguage LastCustomLanguage
+        public static void RecordLastCustomLanguage(CustomLanguage language)
         {
-            get
-            {
-                int customLanguageId = -1;
-                CustomLanguage lastCustomLang = null;
+            File.WriteAllText(LastLanguageFilePath, language?.LanguageId.ToString() ?? "");
+        }
 
-                if (File.Exists(LastLanguageFilePath))
-                {
-                    try
-                    {
-                        customLanguageId = int.Parse(File.ReadAllText(LastLanguageFilePath));
-                    }
-                    catch (Exception e)
-                    {
-                        Main.Logger.LogError("Error reading last custom language: " + e);
-                    }
+        public static CustomLanguage ReadLastCustomLanguage()
+        {
+            if (File.Exists(LastLanguageFilePath))
+                if (int.TryParse(File.ReadAllText(LastLanguageFilePath), out var id))
+                    return CustomLanguage.GetCustomLanguageById(id);
 
-                    lastCustomLang = CustomLanguage.GetCustomLanguageById(customLanguageId);
-                }
-                else
-                {
-                    File.WriteAllText(LastLanguageFilePath, CurrentCustomLanguageId.ToString());
-                }
-
-                return IsUsingCustomLanguage ? CurrentCustomLanguage : lastCustomLang;
-            }
-            set
-            {
-                try
-                {
-                    File.WriteAllText(LastLanguageFilePath, value.LanguageId.ToString());
-                }
-                catch (Exception e)
-                {
-                    Main.Logger.LogError("Error saving last custom language: " + e);
-                }
-            }
+            return null;
         }
 
         public static void GenerateCurrentLanguageExampleFile()
@@ -129,7 +103,7 @@ namespace LanguageAdder
 
                 var btns = instance ? new List<LanguageButton>(instance.AllButtons) : null;
 
-                CustomLanguage.AllLanguages.ForEach(l => // Exception
+                CustomLanguage.AllLanguages.ForEach(l => // TODO: Fix exception
                 {
                     if (instance) btns.Remove(l.LanguageButton);
                     CustomLanguage.AllLanguages.Remove(l);
@@ -183,17 +157,17 @@ namespace LanguageAdder
                 }
             }
 
-            SetCustomLanguage(LastCustomLanguage);
+            var lastCustomLanguage = ReadLastCustomLanguage();
+            if (lastCustomLanguage != null)
+                SetCustomLanguage(lastCustomLanguage);
 
             if (SceneManager.GetActiveScene().name == Constants.MAIN_MENU_SCENE)
                 SceneManager.LoadScene(Constants.MAIN_MENU_SCENE); // Reload the main menu
         }
 
-        public static void SaveLastLanguage(CustomLanguage lang) => LastCustomLanguage = lang;
-
         public static void SetCustomLanguage(CustomLanguage customLanguage)
         {
-            CurrentCustomLanguageId = customLanguage.LanguageId;
+            _currentCustomLanguageId = customLanguage.LanguageId;
             var langButton = customLanguage.LanguageButton;
             var langSetter = Object.FindObjectOfType<LanguageSetter>(true);
 
@@ -204,7 +178,7 @@ namespace LanguageAdder
 
             TranslationController.Instance.SetLanguage(customLanguage.BaseLanguage);
 
-            var fullTranslations = File.ReadAllText(CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).FilePath);
+            var fullTranslations = File.ReadAllText(CurrentCustomLanguage.FilePath);
             LanguageRoot = JObject.Parse(fullTranslations);
 
             if (customLanguage.ForceTextReplacementEnabled)
@@ -233,8 +207,9 @@ namespace LanguageAdder
 
             TranslationController.Instance.ActiveTexts.ToArray().Do(t => t.ResetText()); // Refresh texts
 
-            Main.Logger.LogInfo($"Changed custom language to {CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).LanguageName} (Base language: {CustomLanguage.GetCustomLanguageById(CurrentCustomLanguageId).BaseLanguage})");
-            SaveLastLanguage(customLanguage);
+            Main.Logger.LogInfo($"Changed custom language to {customLanguage.LanguageName} (Base language: {CustomLanguage.GetCustomLanguageById(_currentCustomLanguageId).BaseLanguage})");
+            
+            RecordLastCustomLanguage(customLanguage);
         }
     }
 
@@ -265,5 +240,20 @@ namespace LanguageAdder
         public static CustomLanguage GetCustomLanguageById(int id) => AllLanguages.FirstOrDefault(l => l.LanguageId == id);
 
         public static implicit operator int(CustomLanguage l) => l.LanguageId;
+
+        public static bool operator ==(CustomLanguage left, CustomLanguage right)
+        {
+            if (left is null && right is null)
+                return true;
+            if (left is null || right is null)
+                return false;
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(CustomLanguage left, CustomLanguage right) => !(left == right);
+
+        public override bool Equals(object obj) => obj is CustomLanguage language && language.LanguageId == LanguageId;
+        public override int GetHashCode() => LanguageId;
     }
 }

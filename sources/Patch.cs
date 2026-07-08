@@ -22,14 +22,18 @@ namespace LanguageAdder
         static void SetLanguageButtonPatch(SettingsLanguageMenu __instance)
         {
             Main.Logger.LogInfo($"===== {nameof(SettingsLanguageMenu)}.{nameof(SettingsLanguageMenu.Awake)}() =====");
+
             if (!Data.IsUsingCustomLanguage) return;
+
             if (!__instance.selectedLangText)
             {
                 Main.Logger.LogWarning("selected language text is null");
                 return;
             }
-            __instance.selectedLangText.text = CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageName;
-            Main.Logger.LogInfo("Set text success");
+
+            __instance.selectedLangText.text = Data.CurrentCustomLanguage.LanguageName;
+
+            Main.Logger.LogInfo($"Set the text of {nameof(SettingsLanguageMenu.selectedLangText)} success");
         }
         #endregion
 
@@ -42,14 +46,14 @@ namespace LanguageAdder
 
             var vanillaLanguageButtons = __instance.AllButtons.ToList().Clone();
 
-            CustomLanguage.AllLanguages.ForEach(l =>
+            CustomLanguage.AllLanguages.ForEach(language =>
             {
-                var button = CreateLanguageButton(__instance, l.LanguageName, TranslationController.Instance.Languages[l.BaseLanguage]);
-                if (Data.CurrentCustomLanguageId == l.LanguageId)
+                var button = CreateLanguageButton(__instance, language.LanguageName, TranslationController.Instance.Languages[language.BaseLanguage]);
+                if (Data.CurrentCustomLanguage == language)
                 {
                     UnselectAllButtons(__instance);
-                    l.LanguageButton.Button.SelectButton(true);
-                    l.LanguageButton.Title.color = Color.green;
+                    language.LanguageButton.Button.SelectButton(true);
+                    language.LanguageButton.Title.color = Color.green;
                 }
             });
 
@@ -63,7 +67,8 @@ namespace LanguageAdder
                 b.Title.color = Color.green;
 
                 __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix BECAUSE Close() IS CALLED IN SetLanguage(LanguageButton)
-                //TranslationController.Instance.SetLanguage(b.Language.languageID);
+                
+                Data.RecordLastCustomLanguage(null);
             })));
 
             // Set the scrolling range of the scroller
@@ -71,7 +76,7 @@ namespace LanguageAdder
 
             if (!Data.IsUsingCustomLanguage) return;
 
-            __instance.SetLanguage(CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageButton);
+            __instance.SetLanguage(Data.CurrentCustomLanguage.LanguageButton);
         }
 
         [HarmonyPatch(typeof(LanguageSetter), nameof(LanguageSetter.SetLanguage))]
@@ -87,7 +92,7 @@ namespace LanguageAdder
             if (setterMenu && setterMenu.parentLangButton)
             {
                 if (Data.IsUsingCustomLanguage)
-                    setterMenu.parentLangButton.text = CustomLanguage.GetCustomLanguageById(Data.CurrentCustomLanguageId).LanguageName;
+                    setterMenu.parentLangButton.text = Data.CurrentCustomLanguage.LanguageName;
                 else
                     setterMenu.parentLangButton.text = TranslationController.Instance.Languages[TranslationController.Instance.currentLanguage.languageID].Name;
             }
