@@ -176,7 +176,13 @@ namespace LanguageAdder
         #region HARD-CODED TEXT REPLACEMENT
         [HarmonyPatch(typeof(TMP_Text), nameof(TMP_Text.text), MethodType.Setter)]
         [HarmonyPrefix]
-        static bool HardcodedTextPatch(TMP_Text __instance, [HarmonyArgument(0)] ref string value) => !ReplaceCustom(ref value);
+        static bool HardcodedTextPatch([HarmonyArgument(0)] ref string value)
+        {
+            if (Data.IsUsingCustomLanguage)
+                return !ReplaceCustom(ref value);
+
+            return true;
+        }
 
         public static bool ReplaceCustom(ref string origin)
         {
