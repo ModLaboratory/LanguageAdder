@@ -50,9 +50,12 @@ namespace LanguageAdder
             CustomLanguage.AllLanguages.ForEach(language =>
             {
                 var button = CreateLanguageButton(__instance, language.LanguageName, TranslationController.Instance.Languages[language.BaseLanguage]);
-                
+
                 if (Data.CurrentCustomLanguage == language)
-                    __instance.SetLanguage(language.LanguageButton);
+                {
+                    vanillaLanguageButtons.Do(vanillaButton => vanillaButton.Title.color = Color.white);
+                    button.Title.color = Color.green;
+                }
             });
 
             // Add custom logic to vanilla language behaviors
@@ -112,10 +115,6 @@ namespace LanguageAdder
             {
                 Data.SetCustomLanguage(customLanguage);
 
-                UnselectAllButtons(__instance);
-                langButton.Button.SelectButton(true);
-                langButton.Title.color = Color.green;
-
                 __instance.Close(); // ALSO MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
             }));
             
@@ -127,15 +126,6 @@ namespace LanguageAdder
             __instance.AllButtons = new(__instance.AllButtons.AddItem(langButton).ToArray()); // Add new button to vanilla button list
 
             return langButton;
-        }
-
-        private static void UnselectAllButtons(LanguageSetter __instance)
-        {
-            __instance.AllButtons.ToArray().Do(b =>
-            {
-                b.Button.SelectButton(false);
-                b.Title.color = Color.white;
-            });
         }
         #endregion
 
@@ -150,9 +140,11 @@ namespace LanguageAdder
         [HarmonyPostfix]
         static void InitCustomLanguage(TranslationController __instance)
         {
-            bool hasError = false;
+            var hasError = false;
             Main.CheckCreateFiles(ref hasError);
-            if (!hasError) Data.LoadCustomLanguages();
+
+            if (!hasError) 
+                Data.LoadCustomLanguages();
         }
         #endregion
 

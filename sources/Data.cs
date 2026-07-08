@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace LanguageAdder
@@ -194,14 +195,9 @@ namespace LanguageAdder
                 if (langSetter && langSetter.parentLangButton)
                 {
                     langSetter.parentLangButton.text = langButton.Title.text;
-                }
-                else
-                {
-                    Main.Logger.LogWarning("Null: " + nameof(LanguageSetter.parentLangButton));
-                    if (menu && menu.selectedLangText)
-                    {
-                        menu.selectedLangText.text = langButton.Title.text;
-                    }
+
+                    langSetter.AllButtons.ToArray().Do(button => button.Title.color = Color.white);
+                    langButton.Title.color = Color.green;
                 }
             }
 
