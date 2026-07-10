@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -55,7 +56,8 @@ namespace LanguageAdder
         }
 
         public static JObject LanguageRoot { get; set; } = new();
-        public static JArray ReplacementRoot { get; set; } = new(); // TODO: Optimize logic
+        public static List<(Regex Regex, string Replacement)> RegexReplacementConfig { get; } = new();
+        public static Dictionary<string, string> NonRegexReplacementConfig { get; } = new();
 
         public static void RecordLastCustomLanguage(CustomLanguage language)
         {
@@ -97,6 +99,8 @@ namespace LanguageAdder
                 TranslationController.Instance.SetLanguage(CurrentCustomLanguage.BaseLanguage);
                 IsUsingCustomLanguage = false;
             }
+
+            ClearReplacementConfigCache();
 
             if (CustomLanguage.AllLanguages.Count != 0)
             {
@@ -182,12 +186,15 @@ namespace LanguageAdder
             var fullTranslations = File.ReadAllText(CurrentCustomLanguage.FilePath);
             LanguageRoot = JObject.Parse(fullTranslations);
 
+            ClearReplacementConfigCache();
+
             if (customLanguage.ForceTextReplacementEnabled)
             {
                 var replacementRuleConfig = File.ReadAllText(customLanguage.ForceReplacementConfigPath);
-                ReplacementRoot = JsonConvert.DeserializeObject<JArray>(replacementRuleConfig);
+                CacheReplacementConfig(JsonConvert.DeserializeObject<JArray>(replacementRuleConfig));
             }
             
+            // Apply language change to UI
             var menu = Object.FindObjectOfType<SettingsLanguageMenu>(true);
 
             if (langButton && langButton.Title)
@@ -207,7 +214,40 @@ namespace LanguageAdder
             
             RecordLastCustomLanguage(customLanguage);
         }
+
+        private static void CacheReplacementConfig(JArray config)
+        {
+            ClearReplacementConfigCache();
+
+            foreach (var item in config._values)
+            {
+                var jObject = item.Cast<JObject>();
+                var key = jObject["key"].ToString(); // pattern for regex
+                var value = jObject["value"].ToString(); // replacement for regex
+                var usingRegex = false;
+
+                try
+                {
+                    usingRegex = (bool)jObject["isRegex"];
+                }
+                catch
+                {
+                }
+
+                if (usingRegex)
+                    RegexReplacementConfig.Add((new Regex(key, RegexOptions.Compiled), value));
+                else
+                    NonRegexReplacementConfig.Add(key, value);
+            }
+        }
+
+        private static void ClearReplacementConfigCache()
+        {
+            RegexReplacementConfig.Clear();
+            NonRegexReplacementConfig.Clear();
+        }
     }
+
 
     public class CustomLanguage
     {

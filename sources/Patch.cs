@@ -176,58 +176,40 @@ namespace LanguageAdder
         #region HARD-CODED TEXT REPLACEMENT
         [HarmonyPatch(typeof(TMP_Text), nameof(TMP_Text.text), MethodType.Setter)]
         [HarmonyPrefix]
-        static bool HardcodedTextPatch([HarmonyArgument(0)] ref string value)
+        static void HardcodedTextPatch([HarmonyArgument(0)] ref string value)
         {
             if (Data.IsUsingCustomLanguage)
-                return !ReplaceCustom(ref value);
-
-            return true;
+                ReplaceCustom(ref value);
         }
 
         public static bool ReplaceCustom(ref string origin)
         {
-            try
             {
-                foreach (var item in Data.ReplacementRoot._values)
+                if (Data.NonRegexReplacementConfig.TryGetValue(origin, out var value))
                 {
-                    var obj = item.Cast<JObject>();
-                    var key = obj["key"].ToString(); // pattern for regex
-                    var value = obj["value"].ToString(); // replacement for regex
-                    var usingRegex = false;
+                    origin = value;
+                    return true;
+                }
+            }
 
+            foreach (var (regex, value) in Data.RegexReplacementConfig)
+            {
+                if (regex.IsMatch(origin))
+                {
                     try
                     {
-                        usingRegex = (bool)obj["isRegex"];
+                        origin = regex.Replace(origin, value);
                     }
                     catch
                     {
+                        return false;
                     }
 
-                    if (usingRegex)
-                    {
-                        if (Regex.IsMatch(origin, key))
-                        {
-                            origin = Regex.Replace(origin, key, value);
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        if (key == origin)
-                        {
-                            origin = value;
-                            break;
-                        }
-                    }
+                    return true;
                 }
-
-                return false;
-            }
-            catch
-            {
             }
 
-            return true;
+            return false;
         }
         #endregion
     }
