@@ -21,7 +21,29 @@ namespace LanguageAdder
         {
             if (!TranslationController.InstanceExists) return;
             if (Input.GetKeyDown(KeyCode.F1)) Data.GenerateCurrentLanguageExampleFile();
-            if (Input.GetKeyDown(KeyCode.F2)) Data.LoadCustomLanguages();
+            if (Input.GetKeyDown(KeyCode.F2)) TryLoadCustomLanguages();
+        }
+
+        private void TryLoadCustomLanguages()
+        {
+            var attempts = 0;
+            var hasException = false;
+
+            do
+            {
+                hasException = false;
+
+                try
+                {
+                    Data.LoadCustomLanguages();
+                }
+                catch
+                {
+                    hasException = true;
+                    attempts++;
+                }
+            }
+            while (hasException && attempts < 3);
         }
 
         public KeyboardListener() { }
