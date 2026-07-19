@@ -30,7 +30,7 @@ namespace LanguageAdder
         public static readonly string DataFolderPath = Path.Combine(GamePath, DataFolderName);
 
         public static string CurrentExampleLanguageFileName => $"{TranslationController.Instance.currentLanguage.languageID}_Example.lang";
-        public static string ExampleLangFilePath => Path.Combine(DataFolderPath, CurrentExampleLanguageFileName);
+        public static string ExampleLanguageFilePath => Path.Combine(DataFolderPath, CurrentExampleLanguageFileName);
 
         public const string RegisteredLanguageFileName = "Languages.json";
         public static string RegisteredLanguageFilePath => Path.Combine(DataFolderPath, RegisteredLanguageFileName);
@@ -93,7 +93,7 @@ namespace LanguageAdder
             }
 
             var json = root.ToString(Formatting.Indented);
-            File.WriteAllText(ExampleLangFilePath, json);
+            File.WriteAllText(ExampleLanguageFilePath, json);
         }
 
         public static void LoadCustomLanguages()
@@ -110,24 +110,39 @@ namespace LanguageAdder
             {
                 var instance = Object.FindObjectOfType<LanguageSetter>(true);
 
-                var btns = instance ? new List<LanguageButton>(instance.AllButtons) : null;
+                var buttons = instance ? new List<LanguageButton>(instance.AllButtons) : null;
 
-                CustomLanguage.AllLanguages.ForEach(l => 
+                CustomLanguage.AllLanguages.ForEach(l =>
                 {
-                    if (instance) btns.Remove(l.LanguageButton);
+                    if (instance) 
+                        buttons.Remove(l.LanguageButton);
+
                     CustomLanguage.AllLanguages.Remove(l);
-                    if (l.LanguageButton) Object.Destroy(l.LanguageButton.gameObject);
+
+                    if (l.LanguageButton) 
+                        Object.Destroy(l.LanguageButton.gameObject);
                 });
 
-                if (instance) instance.AllButtons = btns.ToArray();
+                if (instance) 
+                    instance.AllButtons = buttons.ToArray();
             }
 
-            if (!File.Exists(RegisteredLanguageFilePath) || !Directory.Exists(DataFolderPath))
+            if (File.Exists(RegisteredLanguageFilePath))
             {
-                Main.Logger.LogError("Error reading file(s): Not exist.");
-                return;
+                LegacyLoadCustomLanguages();
             }
+            else
+            {
+                foreach (var folderPath in Directory.EnumerateDirectories(DataFolderPath))
+                {
+                    var languageName = new DirectoryInfo(folderPath).Name;
+                    
+                }
+            }
+        }
 
+        public static void LegacyLoadCustomLanguages()
+        {
             var languagesJson = File.ReadAllText(RegisteredLanguageFilePath);
 
             if (languagesJson.IsNullOrWhiteSpace()) return;
@@ -143,8 +158,16 @@ namespace LanguageAdder
                 try
                 {
                     var path = property.Value["path"].ToString();
-                    var @base = property.Value["base"].ToString();
+                    var @base = "";
                     var forceReplacementConfigPath = "";
+
+                    try
+                    {
+                        @base = property.Value["base"].ToString();
+                    }
+                    catch
+                    {
+                    }
 
                     try
                     {
@@ -155,7 +178,7 @@ namespace LanguageAdder
                     }
 
                     if (!Enum.TryParse<SupportedLangs>(@base, out var baseLang))
-                        throw new InvalidDataException($"Invalid {nameof(baseLang)}: {baseLang}");
+                        baseLang = SupportedLangs.English;
 
                     _ = new CustomLanguage(name, path, baseLang, forceReplacementConfigPath);
                 }

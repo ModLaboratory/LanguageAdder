@@ -140,10 +140,7 @@ namespace LanguageAdder
         [HarmonyPostfix]
         static void InitCustomLanguage(TranslationController __instance)
         {
-            var hasError = false;
-            Main.CheckCreateFiles(ref hasError);
-
-            if (!hasError) 
+            if (!Main.CheckCreateFiles()) 
                 Data.LoadCustomLanguages();
         }
         #endregion
