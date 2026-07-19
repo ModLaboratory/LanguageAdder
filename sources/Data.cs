@@ -38,6 +38,9 @@ namespace LanguageAdder
         public const string LastLanguageFileName = "LastLanguage.dat";
         public static string LastLanguageFilePath => Path.Combine(DataFolderPath, LastLanguageFileName);
 
+        public const string TranslationDataFileName = "Translation.json";
+        public const string CustomReplacementRuleFileName = "ReplacementConfig.json";
+
 
         private static int _currentCustomLanguageId = int.MinValue;
         public static CustomLanguage CurrentCustomLanguage => CustomLanguage.GetCustomLanguageById(_currentCustomLanguageId);
@@ -136,7 +139,19 @@ namespace LanguageAdder
                 foreach (var folderPath in Directory.EnumerateDirectories(DataFolderPath))
                 {
                     var languageName = new DirectoryInfo(folderPath).Name;
-                    
+                    var translationDataFilePath = Path.Combine(folderPath, TranslationDataFileName);
+                    var replacementRuleConfigFilePath = Path.Combine(folderPath, CustomReplacementRuleFileName);
+
+                    if (!File.Exists(translationDataFilePath))
+                    {
+                        Main.Logger.LogError($"Failed to load custom language {languageName} for not finding the translation data file {translationDataFilePath}");
+                        continue;
+                    }
+
+                    if (!File.Exists(replacementRuleConfigFilePath))
+                        replacementRuleConfigFilePath = "";
+
+                    _ = new CustomLanguage(languageName, translationDataFilePath, forceReplacementConfigPath: replacementRuleConfigFilePath);
                 }
             }
         }
@@ -289,14 +304,16 @@ namespace LanguageAdder
         public int LanguageId { get; init; }
         public LanguageButton LanguageButton { get; internal set; }
 
-        public CustomLanguage(string languageName, string filePath, SupportedLangs baseLanguage, string forceReplacementConfigPath = "")
+        public CustomLanguage(string languageName, string filePath, SupportedLangs baseLanguage = SupportedLangs.English, string forceReplacementConfigPath = "")
         {
             LanguageName = languageName;
             FilePath = filePath;
             BaseLanguage = baseLanguage;
             ForceReplacementConfigPath = forceReplacementConfigPath;
             LanguageId = (AllLanguages.LastOrDefault() ?? (int)Enum.GetValues<SupportedLangs>().ToList().LastOrDefault()) + 1;
+
             AllLanguages.Add(this);
+
             Main.Logger.LogInfo($"Language registered: {LanguageName} {FilePath} {BaseLanguage.ToString()}: {LanguageId} {forceReplacementConfigPath}");
         }
 
