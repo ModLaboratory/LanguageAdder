@@ -41,9 +41,14 @@ namespace LanguageAdder
                 {
                     hasException = true;
                     attempts++;
+
+                    Main.Logger.LogWarning($"Caught error thrown by {nameof(Data)}::{nameof(Data.LoadCustomLanguages)}(), which might be caused by some collection being iterated while attempting to modify the collection. Making another attempt... (Attempt {attempts + 1})");
                 }
             }
             while (hasException && attempts < 3);
+
+            if (hasException)
+                Main.Logger.LogError("Failed to load custom languages after 3 attempts!");
         }
 
         public KeyboardListener() { }

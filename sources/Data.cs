@@ -17,25 +17,29 @@ namespace LanguageAdder
         /// <summary>
         /// Path to your game root directory.
         /// </summary>
-        public static string GamePath => Directory.GetCurrentDirectory();
+        public static readonly string GamePath = Directory.GetCurrentDirectory();
+
         /// <summary>
         /// The name of language data folder.
         /// </summary>
         public const string DataFolderName = "Language_Data";
+
         /// <summary>
         /// Path to the language data folder.
         /// </summary>
-        public static string DataFolderPath => $@"{GamePath}\{DataFolderName}";
-        public static string ExampleLangFileName => $"{TranslationController.Instance.currentLanguage.languageID}_Example.lang";
-        public static string ExampleLangFilePath => $@"{DataFolderPath}\{ExampleLangFileName}";
-        public const string RegisteredLangFileName = "Languages.json";
-        public static string RegisteredLangFilePath => $@"{DataFolderPath}\{RegisteredLangFileName}";
+        public static readonly string DataFolderPath = Path.Combine(GamePath, DataFolderName);
+
+        public static string CurrentExampleLanguageFileName => $"{TranslationController.Instance.currentLanguage.languageID}_Example.lang";
+        public static string ExampleLangFilePath => Path.Combine(DataFolderPath, CurrentExampleLanguageFileName);
+
+        public const string RegisteredLanguageFileName = "Languages.json";
+        public static string RegisteredLanguageFilePath => Path.Combine(DataFolderPath, RegisteredLanguageFileName);
+
         public const string LastLanguageFileName = "LastLanguage.dat";
-        public static string LastLanguageFilePath => $@"{DataFolderPath}\{LastLanguageFileName}";
+        public static string LastLanguageFilePath => Path.Combine(DataFolderPath, LastLanguageFileName);
 
 
         private static int _currentCustomLanguageId = int.MinValue;
-
         public static CustomLanguage CurrentCustomLanguage => CustomLanguage.GetCustomLanguageById(_currentCustomLanguageId);
 
         public static bool IsUsingCustomLanguage
@@ -108,7 +112,7 @@ namespace LanguageAdder
 
                 var btns = instance ? new List<LanguageButton>(instance.AllButtons) : null;
 
-                CustomLanguage.AllLanguages.ForEach(l => // TODO: Fix exception
+                CustomLanguage.AllLanguages.ForEach(l => 
                 {
                     if (instance) btns.Remove(l.LanguageButton);
                     CustomLanguage.AllLanguages.Remove(l);
@@ -118,13 +122,13 @@ namespace LanguageAdder
                 if (instance) instance.AllButtons = btns.ToArray();
             }
 
-            if (!File.Exists(RegisteredLangFilePath) || !Directory.Exists(DataFolderPath))
+            if (!File.Exists(RegisteredLanguageFilePath) || !Directory.Exists(DataFolderPath))
             {
                 Main.Logger.LogError("Error reading file(s): Not exist.");
                 return;
             }
 
-            var languagesJson = File.ReadAllText(RegisteredLangFilePath);
+            var languagesJson = File.ReadAllText(RegisteredLanguageFilePath);
 
             if (languagesJson.IsNullOrWhiteSpace()) return;
 

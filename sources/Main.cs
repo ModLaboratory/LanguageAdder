@@ -54,12 +54,12 @@ namespace LanguageAdder
 
             try
             {
-                if (!File.Exists(RegisteredLangFilePath))
-                    File.WriteAllText(RegisteredLangFilePath, "");
+                if (!File.Exists(RegisteredLanguageFilePath))
+                    File.WriteAllText(RegisteredLanguageFilePath, "");
             }
             catch (Exception e)
             {
-                Logger.LogError($"Error creating registry file: {RegisteredLangFilePath}\r\n{e}");
+                Logger.LogError($"Error creating registry file: {RegisteredLanguageFilePath}\r\n{e}");
                 hasError = true;
                 return;
             }
