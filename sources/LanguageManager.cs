@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿#pragma warning disable CS0618
+using HarmonyLib;
 using Il2CppSystem.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -12,36 +13,8 @@ using UnityEngine.SceneManagement;
 
 namespace LanguageAdder
 {
-    public class Data
+    public class LanguageManager
     {
-        /// <summary>
-        /// Path to your game root directory.
-        /// </summary>
-        public static readonly string GamePath = Directory.GetCurrentDirectory();
-
-        /// <summary>
-        /// The name of language data folder.
-        /// </summary>
-        public const string DataFolderName = "Language_Data";
-
-        /// <summary>
-        /// Path to the language data folder.
-        /// </summary>
-        public static readonly string DataFolderPath = Path.Combine(GamePath, DataFolderName);
-
-        public static string CurrentExampleLanguageFileName => $"{TranslationController.Instance.currentLanguage.languageID}_Example.lang";
-        public static string ExampleLanguageFilePath => Path.Combine(DataFolderPath, CurrentExampleLanguageFileName);
-
-        public const string RegisteredLanguageFileName = "Languages.json";
-        public static string RegisteredLanguageFilePath => Path.Combine(DataFolderPath, RegisteredLanguageFileName);
-
-        public const string LastLanguageFileName = "LastLanguage.dat";
-        public static string LastLanguageFilePath => Path.Combine(DataFolderPath, LastLanguageFileName);
-
-        public const string TranslationDataFileName = "Translation.json";
-        public const string CustomReplacementRuleFileName = "ReplacementConfig.json";
-
-
         private static int _currentCustomLanguageId = int.MinValue;
         public static CustomLanguage CurrentCustomLanguage => CustomLanguage.GetCustomLanguageById(_currentCustomLanguageId);
 
@@ -66,15 +39,18 @@ namespace LanguageAdder
         public static List<(Regex Regex, string Replacement)> RegexReplacementConfig { get; } = new();
         public static Dictionary<string, string> NonRegexReplacementConfig { get; } = new();
 
+        public static SupportedLangs CurrentGameLanguage => TranslationController.Instance.currentLanguage.languageID;
+
+
         public static void RecordLastCustomLanguage(CustomLanguage language)
         {
-            File.WriteAllText(LastLanguageFilePath, language?.LanguageId.ToString() ?? "");
+            File.WriteAllText(ModConstants.LastLanguageFilePath, language?.LanguageId.ToString() ?? "");
         }
 
         public static CustomLanguage ReadLastCustomLanguage()
         {
-            if (File.Exists(LastLanguageFilePath))
-                if (int.TryParse(File.ReadAllText(LastLanguageFilePath), out var id))
+            if (File.Exists(ModConstants.LastLanguageFilePath))
+                if (int.TryParse(File.ReadAllText(ModConstants.LastLanguageFilePath), out var id))
                     return CustomLanguage.GetCustomLanguageById(id);
 
             return null;
@@ -90,13 +66,24 @@ namespace LanguageAdder
                 var value = TranslationController.Instance.GetString(stringName);
 
                 if (value == "STRMISS")
-                    value = ""; // Let the game proceed missing strings
+                    value = ""; // Let the game proceed missing strings while they're being read
 
                 root[key] = value;
             }
 
             var json = root.ToString(Formatting.Indented);
-            File.WriteAllText(ExampleLanguageFilePath, json);
+            var completeFolderPath = Path.Combine(ModConstants.DataFolderPath, "@" + CurrentGameLanguage.ToString() + "_Example");
+            var completePath = Path.Combine(completeFolderPath, ModConstants.TranslationDataFileName);
+
+            try 
+            {
+                Directory.CreateDirectory(completeFolderPath);
+                File.WriteAllText(completePath, json);
+            }
+            catch (Exception e)
+            {
+                Main.Logger.LogError($"Failed to generate example language file to {completePath}: {e}");
+            }
         }
 
         public static void LoadCustomLanguages()
@@ -104,6 +91,7 @@ namespace LanguageAdder
             if (IsUsingCustomLanguage)
             {
                 TranslationController.Instance.SetLanguage(CurrentCustomLanguage.BaseLanguage);
+
                 IsUsingCustomLanguage = false;
             }
 
@@ -112,58 +100,125 @@ namespace LanguageAdder
             if (CustomLanguage.AllLanguages.Count != 0)
             {
                 var instance = Object.FindObjectOfType<LanguageSetter>(true);
-
                 var buttons = instance ? new List<LanguageButton>(instance.AllButtons) : null;
 
                 CustomLanguage.AllLanguages.ForEach(l =>
                 {
-                    if (instance) 
+                    if (instance)
                         buttons.Remove(l.LanguageButton);
 
                     CustomLanguage.AllLanguages.Remove(l);
 
-                    if (l.LanguageButton) 
+                    if (l.LanguageButton)
                         Object.Destroy(l.LanguageButton.gameObject);
                 });
 
-                if (instance) 
+                if (instance)
                     instance.AllButtons = buttons.ToArray();
             }
 
-            if (File.Exists(RegisteredLanguageFilePath))
-            {
-                LegacyLoadCustomLanguages();
+            if (File.Exists(ModConstants.LegacyRegisteredLanguageFilePath))
+            { 
+                Main.Logger.LogInfo("Legacy language registry found. Migrating to the new format...");
+
+                MigrateLegacyLanguageConfigs();
             }
-            else
+            
+            foreach (var folderPath in Directory.EnumerateDirectories(ModConstants.DataFolderPath))
             {
-                foreach (var folderPath in Directory.EnumerateDirectories(DataFolderPath))
+                var languageName = new DirectoryInfo(folderPath).Name;
+
+                if (languageName.StartsWith('@'))
+                    continue;
+
+                var translationDataFilePath = Path.Combine(folderPath, ModConstants.TranslationDataFileName);
+                var replacementRuleConfigFilePath = Path.Combine(folderPath, ModConstants.CustomReplacementRuleFileName);
+
+                if (!File.Exists(translationDataFilePath))
                 {
-                    var languageName = new DirectoryInfo(folderPath).Name;
-                    var translationDataFilePath = Path.Combine(folderPath, TranslationDataFileName);
-                    var replacementRuleConfigFilePath = Path.Combine(folderPath, CustomReplacementRuleFileName);
-
-                    if (!File.Exists(translationDataFilePath))
-                    {
-                        Main.Logger.LogError($"Failed to load custom language {languageName} for not finding the translation data file {translationDataFilePath}");
-                        continue;
-                    }
-
-                    if (!File.Exists(replacementRuleConfigFilePath))
-                        replacementRuleConfigFilePath = "";
-
-                    _ = new CustomLanguage(languageName, translationDataFilePath, forceReplacementConfigPath: replacementRuleConfigFilePath);
+                    Main.Logger.LogError($"Failed to load custom language {languageName} for not finding the translation data file {translationDataFilePath}");
+                    continue;
                 }
+
+                if (!File.Exists(replacementRuleConfigFilePath))
+                    replacementRuleConfigFilePath = "";
+
+                _ = new CustomLanguage(languageName, translationDataFilePath, forceReplacementConfigPath: replacementRuleConfigFilePath);
             }
+
+            var lastCustomLanguage = ReadLastCustomLanguage();
+            if (lastCustomLanguage != null)
+                SetCustomLanguage(lastCustomLanguage);
+
+            if (SceneManager.GetActiveScene().name == Constants.MAIN_MENU_SCENE)
+                SceneManager.LoadScene(Constants.MAIN_MENU_SCENE); // Reload the main menu
         }
 
+        public static void MigrateLegacyLanguageConfigs()
+        {
+            var languagesJson = File.ReadAllText(ModConstants.LegacyRegisteredLanguageFilePath);
+            var root = JObject.Parse(languagesJson);
+            var properties = root.Properties().ToList();
+
+            var hasError = false;
+
+            foreach (var property in properties)
+            {
+                var languageName = property.Name;
+
+                try
+                {
+                    var originTranslationDataPath = property.Value["path"].ToString();
+                    var forceReplacementConfigPath = "";
+
+                    try
+                    {
+                        forceReplacementConfigPath = property.Value["forceReplacementConfigPath"].ToString();
+                    }
+                    catch
+                    {
+                    }
+                    
+                    var newLanguageFolderPath = Directory.CreateDirectory(Path.Combine(ModConstants.DataFolderPath, languageName)).FullName;
+                    var newTranslationDataPath = Path.Combine(newLanguageFolderPath, ModConstants.TranslationDataFileName);
+                    var newReplacementConfigPath = Path.Combine(newLanguageFolderPath, ModConstants.CustomReplacementRuleFileName);
+
+                    File.Move(originTranslationDataPath, newTranslationDataPath);
+
+                    if (File.Exists(forceReplacementConfigPath))
+                        File.Move(forceReplacementConfigPath, newReplacementConfigPath);
+                }
+                catch (Exception e)
+                {
+                    hasError = true;
+
+                    Main.Logger.LogError("Invalid language registry while migrating for: " + languageName + " with " + e);
+                    continue;
+                }
+            }
+
+            try
+            {
+                File.Move(ModConstants.LegacyRegisteredLanguageFilePath, ModConstants.LegacyRegisteredLanguageFilePath + ".old");
+            }
+            catch (Exception e)
+            {
+                hasError = true;
+
+                Main.Logger.LogError("Failed to rename legacy language registry file. The migration will repeat on next startup and may lead to exceptional results! Exception: " + e);
+            }
+
+            if (hasError)
+                Main.Logger.LogWarning("Legacy language registry migration completed with errors! This might lead to exceptional results.");
+            else
+                Main.Logger.LogInfo("Legacy language registry migration completed successfully!");
+        }
+
+        [Obsolete("Legacy language registry could be migrated to the new format by calling MigrateLegacyLanguageConfigs(). LoadCustomLanguages() would also call MigrateLegacyLanguageConfigs() to migrate legacy language configurations.")]
         public static void LegacyLoadCustomLanguages()
         {
-            var languagesJson = File.ReadAllText(RegisteredLanguageFilePath);
-
-            if (languagesJson.IsNullOrWhiteSpace()) return;
-
+            var languagesJson = File.ReadAllText(ModConstants.LegacyRegisteredLanguageFilePath);
             var root = JObject.Parse(languagesJson);
-
             var properties = root.Properties().ToList();
 
             foreach (var property in properties)
@@ -173,7 +228,7 @@ namespace LanguageAdder
                 try
                 {
                     var path = property.Value["path"].ToString();
-                    var @base = "";
+                    var @base = ""; // Now member "base" is obsolete and becomes optional, default to English if not specified
                     var forceReplacementConfigPath = "";
 
                     try
@@ -297,7 +352,7 @@ namespace LanguageAdder
 
         public string LanguageName { get; init; }
         public string FilePath { get; init; }
-        public SupportedLangs BaseLanguage { get; init; }
+        [Obsolete("Unnecessary now. It is English by default.")] public SupportedLangs BaseLanguage { get; init; }
         public string ForceReplacementConfigPath { get; init; }
         public bool ForceTextReplacementEnabled => !ForceReplacementConfigPath.IsNullOrWhiteSpace();
 
@@ -337,3 +392,4 @@ namespace LanguageAdder
         public override int GetHashCode() => LanguageId;
     }
 }
+#pragma warning restore CS0618

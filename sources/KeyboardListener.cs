@@ -1,12 +1,5 @@
-﻿using HarmonyLib;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using TMPro;
+﻿using System;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace LanguageAdder
 {
@@ -20,7 +13,7 @@ namespace LanguageAdder
         public void Update()
         {
             if (!TranslationController.InstanceExists) return;
-            if (Input.GetKeyDown(KeyCode.F1)) Data.GenerateCurrentLanguageExampleFile();
+            if (Input.GetKeyDown(KeyCode.F1)) LanguageManager.GenerateCurrentLanguageExampleFile();
             if (Input.GetKeyDown(KeyCode.F2)) TryLoadCustomLanguages();
         }
 
@@ -35,14 +28,14 @@ namespace LanguageAdder
 
                 try
                 {
-                    Data.LoadCustomLanguages();
+                    LanguageManager.LoadCustomLanguages();
                 }
                 catch
                 {
                     hasException = true;
                     attempts++;
 
-                    Main.Logger.LogWarning($"Caught error thrown by {nameof(Data)}::{nameof(Data.LoadCustomLanguages)}(), which might be caused by some collection being iterated while attempting to modify the collection. Making another attempt... (Attempt {attempts + 1})");
+                    Main.Logger.LogWarning($"Caught error thrown by {nameof(LanguageManager)}::{nameof(LanguageManager.LoadCustomLanguages)}(), which might be caused by some collection being iterated while attempting to modify the collection. Making another attempt... (Attempt {attempts + 1})");
                 }
             }
             while (hasException && attempts < 3);

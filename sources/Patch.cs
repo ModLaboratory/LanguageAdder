@@ -1,15 +1,12 @@
-﻿using AmongUs.Data;
-using Cpp2IL.Core.Extensions;
+﻿#pragma warning disable CS0618
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
-using Newtonsoft.Json.Linq;
 using System;
+using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace LanguageAdder
 {
@@ -23,7 +20,7 @@ namespace LanguageAdder
         {
             Main.Logger.LogInfo($"===== {nameof(SettingsLanguageMenu)}.{nameof(SettingsLanguageMenu.Awake)}() =====");
 
-            if (!Data.IsUsingCustomLanguage) return;
+            if (!LanguageManager.IsUsingCustomLanguage) return;
 
             if (!__instance.selectedLangText)
             {
@@ -31,7 +28,7 @@ namespace LanguageAdder
                 return;
             }
 
-            __instance.selectedLangText.text = Data.CurrentCustomLanguage.LanguageName;
+            __instance.selectedLangText.text = LanguageManager.CurrentCustomLanguage.LanguageName;
 
             Main.Logger.LogInfo($"Set the text of {nameof(SettingsLanguageMenu.selectedLangText)} success");
         }
@@ -51,7 +48,7 @@ namespace LanguageAdder
             {
                 var button = CreateLanguageButton(__instance, language.LanguageName, TranslationController.Instance.Languages[language.BaseLanguage]);
 
-                if (Data.CurrentCustomLanguage == language)
+                if (LanguageManager.CurrentCustomLanguage == language)
                 {
                     vanillaLanguageButtons.Do(vanillaButton => vanillaButton.Title.color = Color.white);
                     button.Title.color = Color.green;
@@ -61,13 +58,13 @@ namespace LanguageAdder
             // Add custom logic to vanilla language behaviors
             vanillaLanguageButtons.ToList().ForEach(button => button.Button.OnClick.AddListener(new Action(() =>
             {
-                Data.IsUsingCustomLanguage = false;
+                LanguageManager.IsUsingCustomLanguage = false;
                 Main.Logger.LogInfo("Changed vanilla language to " + button.Title.text);
 
                 __instance.SetLanguage(button); // If we not do so, selecting vanilla language after selecting custom language wont work and you have to click vanilla language button twice to let the game apply language change
                 __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix BECAUSE Close() IS CALLED IN SetLanguage(LanguageButton)
-                
-                Data.RecordLastCustomLanguage(null); // Clear last custom language record
+
+                LanguageManager.RecordLastCustomLanguage(null); // Clear last custom language record
             })));
 
             // Set the scrolling range of the scroller
@@ -76,7 +73,7 @@ namespace LanguageAdder
 
         [HarmonyPatch(typeof(LanguageSetter), nameof(LanguageSetter.SetLanguage))]
         [HarmonyPrefix]
-        static bool SelectedLangTextFix() => !Data.IsUsingCustomLanguage;
+        static bool SelectedLangTextFix() => !LanguageManager.IsUsingCustomLanguage;
 
         [HarmonyPatch(typeof(MainMenuManager), nameof(MainMenuManager.LateUpdate))]
         [HarmonyPostfix]
@@ -86,8 +83,8 @@ namespace LanguageAdder
 
             if (setterMenu && setterMenu.parentLangButton)
             {
-                if (Data.IsUsingCustomLanguage)
-                    setterMenu.parentLangButton.text = Data.CurrentCustomLanguage.LanguageName;
+                if (LanguageManager.IsUsingCustomLanguage)
+                    setterMenu.parentLangButton.text = LanguageManager.CurrentCustomLanguage.LanguageName;
                 else
                     setterMenu.parentLangButton.text = TranslationController.Instance.Languages[TranslationController.Instance.currentLanguage.languageID].Name;
             }
@@ -107,22 +104,22 @@ namespace LanguageAdder
             langButton.Language = baseLang;
 
             var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == langName).FirstOrDefault();
-            
+
             customLanguage.LanguageButton = langButton;
-            
+
             langButton.Button.OnClick = new();
             langButton.Button.OnClick.AddListener(new Action(() =>
             {
-                Data.SetCustomLanguage(customLanguage);
+                LanguageManager.SetCustomLanguage(customLanguage);
 
                 __instance.Close(); // ALSO MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix
             }));
-            
+
             var vector = new Vector3(0, __instance.ButtonStart - __instance.AllButtons.Count * __instance.ButtonHeight, -0.5f);
-            
+
             langButton.transform.localPosition = vector;
             langButton.gameObject.SetActive(true);
-            
+
             __instance.AllButtons = new(__instance.AllButtons.AddItem(langButton).ToArray()); // Add new button to vanilla button list
 
             return langButton;
@@ -140,8 +137,17 @@ namespace LanguageAdder
         [HarmonyPostfix]
         static void InitCustomLanguage(TranslationController __instance)
         {
-            if (!Main.CheckCreateFiles()) 
-                Data.LoadCustomLanguages();
+            try
+            {
+                if (!Directory.Exists(ModConstants.DataFolderPath))
+                    Directory.CreateDirectory(ModConstants.DataFolderPath);
+            }
+            catch (Exception e)
+            {
+                Main.Logger.LogError($"Error creating data folder: {ModConstants.DataFolderPath}\r\n{e}");
+            }
+
+            LanguageManager.LoadCustomLanguages();
         }
         #endregion
 
@@ -150,9 +156,9 @@ namespace LanguageAdder
         [HarmonyPrefix]
         public static bool GetStringPatch(TranslationController __instance, string id, string defaultStr, Il2CppReferenceArray<Il2CppSystem.Object> parts, ref string __result)
         {
-            if (!Data.IsUsingCustomLanguage) return true;
+            if (!LanguageManager.IsUsingCustomLanguage) return true;
 
-            var value = Data.LanguageRoot[id]?.ToString() ?? "";
+            var value = LanguageManager.LanguageRoot[id]?.ToString() ?? "";
 
             if (parts.Any())
                 __result = Il2CppSystem.String.Format(value, parts);
@@ -175,21 +181,21 @@ namespace LanguageAdder
         [HarmonyPrefix]
         static void HardcodedTextPatch([HarmonyArgument(0)] ref string value)
         {
-            if (Data.IsUsingCustomLanguage)
+            if (LanguageManager.IsUsingCustomLanguage)
                 ReplaceCustom(ref value);
         }
 
         public static bool ReplaceCustom(ref string origin)
         {
             {
-                if (Data.NonRegexReplacementConfig.TryGetValue(origin, out var value))
+                if (LanguageManager.NonRegexReplacementConfig.TryGetValue(origin, out var value))
                 {
                     origin = value;
                     return true;
                 }
             }
 
-            foreach (var (regex, value) in Data.RegexReplacementConfig)
+            foreach (var (regex, value) in LanguageManager.RegexReplacementConfig)
             {
                 if (regex.IsMatch(origin))
                 {
@@ -211,3 +217,4 @@ namespace LanguageAdder
         #endregion
     }
 }
+#pragma warning restore CS0618

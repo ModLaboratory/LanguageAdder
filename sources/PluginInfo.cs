@@ -4,6 +4,6 @@ namespace LanguageAdder
     {
         public const string PLUGIN_GUID = "cn.modlaboratory.languageadder";
         public const string PLUGIN_NAME = "LanguageAdder";
-        public const string PLUGIN_VERSION = "1.3";
+        public const string PLUGIN_VERSION = "1.4";
     }
 }

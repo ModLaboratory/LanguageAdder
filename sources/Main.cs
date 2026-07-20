@@ -5,8 +5,7 @@ using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using System;
 using System.IO;
-using System.Linq;
-using static LanguageAdder.Data;
+using static LanguageAdder.LanguageManager;
 
 namespace LanguageAdder
 {
@@ -24,44 +23,7 @@ namespace LanguageAdder
             AddComponent<KeyboardListener>();
             Harmony.PatchAll();
 
-            Logger.LogInfo($"LanguageAdder loaded successfully!");
-        }
-
-        internal static bool CheckCreateFiles()
-        {
-            try
-            {
-                if (!Directory.Exists(DataFolderPath)) 
-                    Directory.CreateDirectory(DataFolderPath);
-            }
-            catch (Exception e)
-            {
-                Logger.LogError($"Error creating data folder: {DataFolderPath}\r\n{e}");
-                return false;
-            }
-
-            try
-            {
-                GenerateCurrentLanguageExampleFile();
-            }
-            catch (Exception e)
-            {
-                Logger.LogError($"Error creating example file: {ExampleLanguageFilePath}\r\n{e}");
-                return false;
-            }
-
-            try
-            {
-                if (!File.Exists(RegisteredLanguageFilePath))
-                    File.WriteAllText(RegisteredLanguageFilePath, "");
-            }
-            catch (Exception e)
-            {
-                Logger.LogError($"Error creating registry file: {RegisteredLanguageFilePath}\r\n{e}");
-                return false;
-            }
-
-            return true;
+            Logger.LogInfo($"{nameof(LanguageAdder)} loaded successfully!");
         }
     }
 }
