@@ -188,14 +188,14 @@ namespace LanguageAdder
         public static bool ReplaceCustom(ref string origin)
         {
             {
-                if (LanguageManager.NonRegexReplacementConfig.TryGetValue(origin, out var value))
+                if (LanguageManager.NonRegexReplacementConfigs.TryGetValue(origin, out var value))
                 {
                     origin = value;
                     return true;
                 }
             }
 
-            foreach (var (regex, value) in LanguageManager.RegexReplacementConfig)
+            foreach (var (regex, value) in LanguageManager.RegexReplacementConfigs)
             {
                 if (regex.IsMatch(origin))
                 {

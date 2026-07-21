@@ -36,8 +36,8 @@ namespace LanguageAdder
         }
 
         public static JObject LanguageRoot { get; set; } = new();
-        public static List<(Regex Regex, string Replacement)> RegexReplacementConfig { get; } = new();
-        public static Dictionary<string, string> NonRegexReplacementConfig { get; } = new();
+        public static List<(Regex Regex, string Replacement)> RegexReplacementConfigs { get; } = new();
+        public static Dictionary<string, string> NonRegexReplacementConfigs { get; } = new();
 
         public static SupportedLangs CurrentGameLanguage => TranslationController.Instance.currentLanguage.languageID;
 
@@ -95,25 +95,31 @@ namespace LanguageAdder
                 IsUsingCustomLanguage = false;
             }
 
-            ClearReplacementConfigCache();
+            ClearReplacementConfigCaches();
 
             if (CustomLanguage.AllLanguages.Count != 0)
             {
                 var instance = Object.FindObjectOfType<LanguageSetter>(true);
-                var buttons = instance ? new List<LanguageButton>(instance.AllButtons) : null;
 
-                CustomLanguage.AllLanguages.ForEach(l =>
+                List<LanguageButton> buttons = null;
+
+                if (instance && instance.AllButtons != null)
+                    buttons = instance.AllButtons.ToList();
+
+                var originalList = CustomLanguage.AllLanguages.ToList();
+
+                CustomLanguage.AllLanguages.ForEach(language =>
                 {
-                    if (instance)
-                        buttons.Remove(l.LanguageButton);
-
-                    CustomLanguage.AllLanguages.Remove(l);
-
-                    if (l.LanguageButton)
-                        Object.Destroy(l.LanguageButton.gameObject);
+                    if (language.LanguageButton)
+                    {
+                        buttons?.Remove(language.LanguageButton);
+                        Object.Destroy(language.LanguageButton.gameObject);
+                    }
                 });
 
-                if (instance)
+                CustomLanguage.AllLanguages.Clear();
+
+                if (instance && buttons != null)
                     instance.AllButtons = buttons.ToArray();
             }
 
@@ -283,7 +289,7 @@ namespace LanguageAdder
             var fullTranslations = File.ReadAllText(CurrentCustomLanguage.FilePath);
             LanguageRoot = JObject.Parse(fullTranslations);
 
-            ClearReplacementConfigCache();
+            ClearReplacementConfigCaches();
 
             if (customLanguage.ForceTextReplacementEnabled)
             {
@@ -314,7 +320,7 @@ namespace LanguageAdder
 
         private static void CacheReplacementConfig(JArray config)
         {
-            ClearReplacementConfigCache();
+            ClearReplacementConfigCaches();
 
             foreach (var item in config._values)
             {
@@ -332,16 +338,16 @@ namespace LanguageAdder
                 }
 
                 if (usingRegex)
-                    RegexReplacementConfig.Add((new Regex(key, RegexOptions.Compiled), value));
+                    RegexReplacementConfigs.Add((new Regex(key, RegexOptions.Compiled), value));
                 else
-                    NonRegexReplacementConfig.Add(key, value);
+                    NonRegexReplacementConfigs.Add(key, value);
             }
         }
 
-        private static void ClearReplacementConfigCache()
+        private static void ClearReplacementConfigCaches()
         {
-            RegexReplacementConfig.Clear();
-            NonRegexReplacementConfig.Clear();
+            RegexReplacementConfigs.Clear();
+            NonRegexReplacementConfigs.Clear();
         }
     }
 

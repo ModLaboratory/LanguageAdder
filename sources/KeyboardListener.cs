@@ -14,7 +14,7 @@ namespace LanguageAdder
         {
             if (!TranslationController.InstanceExists) return;
             if (Input.GetKeyDown(KeyCode.F1)) LanguageManager.GenerateCurrentLanguageExampleFile();
-            if (Input.GetKeyDown(KeyCode.F2)) TryLoadCustomLanguages();
+            if (Input.GetKeyDown(KeyCode.F2)) LanguageManager.LoadCustomLanguages();
         }
 
         private void TryLoadCustomLanguages()

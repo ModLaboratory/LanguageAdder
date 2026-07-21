@@ -6,6 +6,10 @@
 
 一个用于在Among Us中添加自定义语言的插件。
 
+## 声明
+
+这些模组不隶属于 Among Us 或 Innersloth LLC，其包含的内容也未得到 Innersloth LLC 的认可或以其他方式赞助。此处包含的部分材料是Innersloth LLC的财产。
+
 ## 演示
 
 ![option_menu](/images/simplified_chinese/option_menu.png)
