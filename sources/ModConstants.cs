@@ -29,5 +29,5 @@ public static class ModConstants
     public static string LastLanguageFilePath => Path.Combine(DataFolderPath, LastLanguageFileName);
 
     public const string TranslationDataFileName = "Translation.json";
-    public const string CustomReplacementRuleFileName = "ReplacementConfig.json";
+    public const string CustomReplacementRuleFileName = "ReplacementConfigs.json";
 }

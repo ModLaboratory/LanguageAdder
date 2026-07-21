@@ -29,9 +29,102 @@ If you have already installed BepInEx for your Among Us, you can directly downlo
 ## Usage
 
 1. Open Among Us.
-2. When the game shows you main menu, open your Among Us game root directory. Normally, you can see a `Language_Data` folder in your game root directory.
-3. In this folder, there are two files: `[YOUR_CURRENT_GAME_LANGUAGE]_Example.lang` `Languages.json`. (Note: when you switched to other languages, an example language file will be automatically generated. You can also press `F1` to generate an example language file in the current game language.)
-4. Edit those files according to your need. Below are the descriptions of the files.
+2. When the game shows you main menu, press `F1` and then open your Among Us game root directory. Normally, you can see a `Language_Data` folder in your game root directory.
+3. In this folder, you can find an example language folder (e.g., `@English_Example`) that is automatically generated based on your current game language. You can also press `F1` to generate an example language file at any time.
+4. To create a custom language:
+   - Create a new folder inside `Language_Data` with the name of your custom language (e.g., `My English`).
+   - Copy the example `TranslationData.json` file into this folder.
+   - Edit the `TranslationData.json` file with your translations.
+   - (Optional) Create a `ReplacementConfigs.json` file in the same folder for hard-coded text replacements.
+5. Press `F2` to reload custom language configurations without restarting the game.
+
+### Folder Structure Example
+
+```
+D:\Games\Among Us\
+├── Among Us_Data\
+├── BepInEx\
+├── Among Us.exe
+├── ...
+│
+└── Language_Data\
+	├── @English_Example\             # Mod-generated example folder
+	│   └── TranslationData.json
+	├── My English\                   # Your custom language folder
+	│   ├── TranslationData.json      # Your translations
+	│   └── ReplacementConfigs.json # Optional: force text replacements
+	└── Another Custom Language\
+		└── TranslationData.json
+```
+
+--------
+
+### `TranslationData.json`
+
+The translation file for your custom language. This file should contain key-value pairs where keys are `StringNames` enum values and values are the translated text.
+
+#### Example
+
+```json
+{
+  "None": "STRMISS",
+  "BackButton": "Back",
+  "AvailableGamesLabel": "Available Games",
+  "CreateGameButton": "Create Game",
+  "FindGameButton": "Find Game",
+  "EnterCode": "Enter Code",
+  "GhostIgnoreTasks": "You're dead. Enjoy the chaos.",
+  "GhostDoTasks": "You're dead. Finish your tasks to win.",
+  "GhostImpostor": "You're dead. You can still sabotage.",
+  "ImpostorTask": "Sabotage and kill everyone.",
+  "FakeTasks": "Fake Tasks:",
+  "TaskComplete": "Task Completed!",
+  ...
+  "DetectiveNotesPostIt": "Interrogate crew!",
+  "DetectiveNotesSuspectNumber": "{0}:"
+}
+```
+
+#### Description
+
+- Keys correspond to the game's internal member names, so don't edit them or the corresponding translations would not be found.
+- Values are your translations.
+- If a string is not found in your translation file, the game will use the English fallback.
+
+--------
+
+### `CustomReplacementRule.json` (Optional)
+
+Configuration used to replace hard-coded texts that are not covered by `TranslationData.json`.
+
+#### Example
+
+```
+[
+  {
+    "key": "Done",
+    "value": "完成"
+  },
+  {
+    "key": "(\\d+)\\s*seconds?\\s+remaining",
+    "value": "剩余$1秒",
+    "isRegex": true
+  }
+]
+```
+
+#### Description
+
+- Field `key`: The exact text or regex pattern to match.
+- Field `value`: The replacement text.
+- Field `isRegex` (Optional): If `true`, the `key` will be treated as a Regular Expression pattern. In the example above, it matches strings like `10 seconds remaining` and replaces it with `剩余10秒`.
+- If `isRegex` is `false` or omitted, the mod performs an exact string match.
+
+--------
+
+
+<details>
+	<summary>Legacy Configuration Usage (obsolete, only for reference)</summary>
 
 ### `Languages.json`
 
@@ -39,7 +132,7 @@ The main cofiguration of your custom languages.
 
 #### Example
 
- ```json
+```json
 {
 	"Language1":
 	{
@@ -53,7 +146,7 @@ The main cofiguration of your custom languages.
 		"forceReplacementConfigPath": ".\\Language_Data\\my_force_text_replacement_rule.json"
 	}
 }
- ```
+```
 
 ##### Description
 
@@ -118,8 +211,12 @@ Configuration used to replace the texts that are hard-coded in the game, which y
 - Field `key`: The exact match of the text you want to translate.
 - Field `value`: The translation.
 
+</details>
+
 ## Other Features
 
 - You can press `F1` to generate an example language file of the current game language.
 - You can press `F2` to reload the configuration of custom languages.
-- The custom language setting will be saved. If you set a custom language during your last gaming session, the mod will help set the game's language to that custom language you last used once the game opens.
+- The custom language setting will be saved for automatically applying the custom language on the next modded gaming session.
+- Language folders starting with `@` will be ignored by the mod.
+- Legacy custom language registry configurations will be automatically migrated to the new format. If you're interested in `Languages.json.old`, you can reference `Legacy Configuration Usage` part.
