@@ -119,7 +119,7 @@ D:\Games\Among Us\
 - 字段 `value`：替换后的文本。
 - 字段 `isRegex`（可选）：若为 `true`，则 `key` 将被视为正则表达式。在上述示例中，它会匹配类似 `10 seconds remaining` 的字符串，并将其替换为 `剩余10秒`。
 - 若 `isRegex` 为 `false` 或省略，则模组执行精确字符串匹配。
-- 
+
 --------
 
 
