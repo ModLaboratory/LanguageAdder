@@ -8,7 +8,7 @@
 
 ## 声明
 
-这些模组不隶属于 Among Us 或 Innersloth LLC，其包含的内容也未得到 Innersloth LLC 的认可或以其他方式赞助。此处包含的部分材料是Innersloth LLC的财产。
+这些模组不隶属于 Among Us 或 Innersloth 有限责任公司，其包含的内容也未得到 Innersloth 有限责任公司的认可或以其他方式赞助。此处包含的部分材料是 Innersloth 有限责任公司的财产。 © Innersloth 有限责任公司。
 
 ## 演示
 
