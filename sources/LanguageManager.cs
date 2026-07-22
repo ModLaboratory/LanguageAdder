@@ -356,6 +356,8 @@ namespace LanguageAdder
     {
         public static List<CustomLanguage> AllLanguages { get; private set; } = new();
 
+        private static readonly int MaxVanillaLanguageId = Enum.GetValues<SupportedLangs>().Select(l => (int)l).Max() + 1;
+
         public string LanguageName { get; init; }
         public string FilePath { get; init; }
         [Obsolete("Unnecessary now. It is English by default.")] public SupportedLangs BaseLanguage { get; init; }
@@ -371,16 +373,22 @@ namespace LanguageAdder
             FilePath = filePath;
             BaseLanguage = baseLanguage;
             ForceReplacementConfigPath = forceReplacementConfigPath;
-            LanguageId = (AllLanguages.LastOrDefault() ?? (int)Enum.GetValues<SupportedLangs>().ToList().LastOrDefault()) + 1;
+            LanguageId = AssignNewId();
 
             AllLanguages.Add(this);
 
             Main.Logger.LogInfo($"Language registered: {LanguageName} {FilePath} {BaseLanguage.ToString()}: {LanguageId} {forceReplacementConfigPath}");
         }
 
-        public static CustomLanguage GetCustomLanguageById(int id) => AllLanguages.FirstOrDefault(l => l.LanguageId == id);
+        private static int AssignNewId()
+        {
+            if (AllLanguages.Any())
+                return AllLanguages.Select(l => l.LanguageId).Max() + 1;
+            else
+                return MaxVanillaLanguageId;
+        }
 
-        public static implicit operator int(CustomLanguage l) => l.LanguageId;
+        public static CustomLanguage GetCustomLanguageById(int id) => AllLanguages.FirstOrDefault(l => l.LanguageId == id);
 
         public static bool operator ==(CustomLanguage left, CustomLanguage right)
         {

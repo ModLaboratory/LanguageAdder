@@ -23,7 +23,7 @@ namespace LanguageAdder
             AddComponent<KeyboardListener>();
             Harmony.PatchAll();
 
-            Logger.LogInfo($"{nameof(LanguageAdder)} loaded successfully!");
+            Logger.LogInfo($"{nameof(LanguageAdder)} (v{PluginInfo.PLUGIN_VERSION}) loaded successfully!");
         }
     }
 }

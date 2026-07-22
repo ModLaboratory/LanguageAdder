@@ -95,20 +95,21 @@ namespace LanguageAdder
         private static LanguageButton CreateLanguageButton(LanguageSetter __instance, string langName, TranslatedImageSet baseLang)
         {
             var lastButtonTransform = __instance.AllButtons.LastOrDefault().transform;
-            if (!lastButtonTransform && __instance.AllButtons != null && __instance.AllButtons.Count < 2) return null;
-            var buttonPosPrefab = lastButtonTransform.transform.localPosition;
 
-            var langButton = Object.Instantiate(__instance.ButtonPrefab, lastButtonTransform.parent);
+            if (!lastButtonTransform && __instance.AllButtons != null && __instance.AllButtons.Count < 2) // Why did i write these conditions?
+                return null; // This if() check seems unnecessary according to my tests, but keeping it for safety is not a bad idea
 
-            langButton.Title.text = langName;
-            langButton.Language = baseLang;
+            var languageButton = Object.Instantiate(__instance.ButtonPrefab, lastButtonTransform.parent);
+
+            languageButton.Title.text = langName;
+            languageButton.Language = baseLang;
 
             var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == langName).FirstOrDefault();
 
-            customLanguage.LanguageButton = langButton;
+            customLanguage.LanguageButton = languageButton;
 
-            langButton.Button.OnClick = new();
-            langButton.Button.OnClick.AddListener(new Action(() =>
+            languageButton.Button.OnClick = new();
+            languageButton.Button.OnClick.AddListener(new Action(() =>
             {
                 LanguageManager.SetCustomLanguage(customLanguage);
 
@@ -117,12 +118,12 @@ namespace LanguageAdder
 
             var vector = new Vector3(0, __instance.ButtonStart - __instance.AllButtons.Count * __instance.ButtonHeight, -0.5f);
 
-            langButton.transform.localPosition = vector;
-            langButton.gameObject.SetActive(true);
+            languageButton.transform.localPosition = vector;
+            languageButton.gameObject.SetActive(true);
 
-            __instance.AllButtons = new(__instance.AllButtons.AddItem(langButton).ToArray()); // Add new button to vanilla button list
+            __instance.AllButtons = new(__instance.AllButtons.AddItem(languageButton).ToArray()); // Add new button to vanilla button list
 
-            return langButton;
+            return languageButton;
         }
         #endregion
 
