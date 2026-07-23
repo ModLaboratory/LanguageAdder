@@ -3,6 +3,7 @@ using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem.Linq;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TMPro;
@@ -13,6 +14,8 @@ namespace LanguageAdder
     [HarmonyPatch]
     internal static class Patch
     {
+        internal static IEnumerable<LanguageButton> VanillaLanguageButtons { get; set; } 
+
         #region PATCH THE BUTTON THAT LEADS TO LANGUAGE MENU
         [HarmonyPatch(typeof(SettingsLanguageMenu), nameof(SettingsLanguageMenu.Awake))]
         [HarmonyPostfix]
@@ -24,13 +27,13 @@ namespace LanguageAdder
 
             if (!__instance.selectedLangText)
             {
-                Main.Logger.LogWarning("selected language text is null");
+                Main.Logger.LogWarning($"{nameof(SettingsLanguageMenu)}::{nameof(SettingsLanguageMenu.selectedLangText)} is null");
                 return;
             }
 
             __instance.selectedLangText.text = LanguageManager.CurrentCustomLanguage.LanguageName;
 
-            Main.Logger.LogInfo($"Set the text of {nameof(SettingsLanguageMenu.selectedLangText)} success");
+            Main.Logger.LogInfo($"Set the text of {nameof(SettingsLanguageMenu.selectedLangText)} successfully");
         }
         #endregion
 
@@ -41,7 +44,7 @@ namespace LanguageAdder
         {
             Main.Logger.LogInfo($"===== {nameof(LanguageSetter)}::{nameof(LanguageSetter.Start)}() =====");
 
-            var vanillaLanguageButtons = __instance.AllButtons.Where(button => TranslationController.Instance.Languages.ContainsValue(button.Language));
+            VanillaLanguageButtons = __instance.AllButtons.Where(button => TranslationController.Instance.Languages.ContainsValue(button.Language));
 
             // Highlight custom language button if selected
             CustomLanguage.AllLanguages.ForEach(language =>
@@ -50,16 +53,16 @@ namespace LanguageAdder
 
                 if (LanguageManager.CurrentCustomLanguage == language)
                 {
-                    vanillaLanguageButtons.Do(vanillaButton => vanillaButton.Title.color = Color.white);
+                    VanillaLanguageButtons.Do(vanillaButton => vanillaButton.Title.color = Color.white);
                     button.Title.color = Color.green;
                 }
             });
 
             // Add custom logic to vanilla language behaviors
-            vanillaLanguageButtons.ToList().ForEach(button => button.Button.OnClick.AddListener(new Action(() =>
+            VanillaLanguageButtons.Do(button => button.Button.OnClick.AddListener(new Action(() =>
             {
                 LanguageManager.IsUsingCustomLanguage = false;
-                Main.Logger.LogInfo("Changed vanilla language to " + button.Title.text);
+                Main.Logger.LogInfo($"Changing vanilla language to {button.Title.text}...");
 
                 __instance.SetLanguage(button); // If we not do so, selecting vanilla language after selecting custom language wont work and you have to click vanilla language button twice to let the game apply language change
                 __instance.Close(); // MANUALLY CLOSE TO FIX THE PATCH SelectedLangTextFix BECAUSE Close() IS CALLED IN SetLanguage(LanguageButton)
@@ -92,7 +95,7 @@ namespace LanguageAdder
         #endregion
 
         #region LANGUAGE BUTTON CREATION
-        private static LanguageButton CreateLanguageButton(LanguageSetter __instance, string langName, TranslatedImageSet baseLang)
+        private static LanguageButton CreateLanguageButton(LanguageSetter __instance, string languageName, TranslatedImageSet baseLanguage)
         {
             var lastButtonTransform = __instance.AllButtons.LastOrDefault().transform;
 
@@ -101,10 +104,10 @@ namespace LanguageAdder
 
             var languageButton = Object.Instantiate(__instance.ButtonPrefab, lastButtonTransform.parent);
 
-            languageButton.Title.text = langName;
-            languageButton.Language = baseLang;
+            languageButton.Title.text = languageName;
+            languageButton.Language = baseLanguage;
 
-            var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == langName).FirstOrDefault();
+            var customLanguage = CustomLanguage.AllLanguages.Where(l => l.LanguageName == languageName).FirstOrDefault();
 
             customLanguage.LanguageButton = languageButton;
 

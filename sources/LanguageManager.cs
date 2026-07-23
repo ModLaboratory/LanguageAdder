@@ -41,24 +41,71 @@ namespace LanguageAdder
 
         public static SupportedLangs CurrentGameLanguage => TranslationController.Instance.currentLanguage.languageID;
 
+        private const string JsonMemberVersionName = "version";
+        private const string JsonMemberLastLanguageName = "lastLanguage";
 
         public static void RecordLastCustomLanguage(CustomLanguage language)
         {
-            File.WriteAllText(ModConstants.LastLanguageFilePath, language?.LanguageId.ToString() ?? "");
+            var jsonRoot = new JObject();
+
+            jsonRoot[JsonMemberVersionName] = PluginInfo.PLUGIN_VERSION;
+            jsonRoot[JsonMemberLastLanguageName] = language?.LanguageName ?? "";
+
+            File.WriteAllText(ModConstants.LastLanguageFilePath, jsonRoot.ToString(Formatting.Indented));
         }
 
         public static CustomLanguage ReadLastCustomLanguage()
         {
             if (File.Exists(ModConstants.LastLanguageFilePath))
-                if (int.TryParse(File.ReadAllText(ModConstants.LastLanguageFilePath), out var id))
-                    return CustomLanguage.GetCustomLanguageById(id);
+            {
+                var content = File.ReadAllText(ModConstants.LastLanguageFilePath);
+
+                if (int.TryParse(content, out var id))
+                {
+                    var legacyLastLanguage = CustomLanguage.GetCustomLanguageById(id);
+
+                    RecordLastCustomLanguage(legacyLastLanguage);
+
+                    return legacyLastLanguage;
+                }
+                else
+                {
+                    try
+                    {
+                        var jsonRoot = JObject.Parse(content);
+                        var configVersionString = jsonRoot[JsonMemberVersionName].ToString();
+                        var lastLanguageName = jsonRoot[JsonMemberLastLanguageName].ToString();
+
+                        if (lastLanguageName.IsNullOrWhiteSpace())
+                            return null;
+
+                        if (Version.TryParse(configVersionString, out var configVersion))
+                        {
+                            if (configVersion > PluginInfo.ModVersion)
+                                Main.Logger.LogWarning($"Last language config file comes from a newer version ({configVersionString}) !");
+                        }
+                        else
+                        {
+                            Main.Logger.LogWarning($"{ModConstants.LastLanguageFileName} file has an invalid version string: {configVersionString}");
+                        }
+
+                        return CustomLanguage.AllLanguages.FirstOrDefault(language => language.LanguageName == lastLanguageName);
+                    }
+                    catch
+                    {
+                        RecordLastCustomLanguage(null); // Override invalid JSON
+
+                        return null;
+                    }
+                }
+            }
 
             return null;
         }
 
         public static void GenerateCurrentLanguageExampleFile()
         {
-            JObject root = new();
+            var jsonRoot = new JObject();
 
             foreach (var stringName in Enum.GetValues<StringNames>())
             {
@@ -68,10 +115,10 @@ namespace LanguageAdder
                 if (value == "STRMISS")
                     value = ""; // Let the game proceed missing strings while they're being read
 
-                root[key] = value;
+                jsonRoot[key] = value;
             }
 
-            var json = root.ToString(Formatting.Indented);
+            var json = jsonRoot.ToString(Formatting.Indented);
             var completeFolderPath = Path.Combine(ModConstants.DataFolderPath, "@" + CurrentGameLanguage.ToString() + "_Example");
             var completePath = Path.Combine(completeFolderPath, ModConstants.TranslationDataFileName);
 
@@ -153,10 +200,12 @@ namespace LanguageAdder
             }
 
             var lastCustomLanguage = ReadLastCustomLanguage();
-            if (lastCustomLanguage != null)
-                SetCustomLanguage(lastCustomLanguage);
+            var success = false;
 
-            if (SceneManager.GetActiveScene().name == Constants.MAIN_MENU_SCENE)
+            if (lastCustomLanguage != null)
+                success = SetCustomLanguage(lastCustomLanguage);
+
+            if (SceneManager.GetActiveScene().name == Constants.MAIN_MENU_SCENE && success)
                 SceneManager.LoadScene(Constants.MAIN_MENU_SCENE); // Reload the main menu
         }
 
@@ -273,41 +322,90 @@ namespace LanguageAdder
                 SceneManager.LoadScene(Constants.MAIN_MENU_SCENE); // Reload the main menu
         }
 
-        public static void SetCustomLanguage(CustomLanguage customLanguage)
+        public static bool SetCustomLanguage(CustomLanguage customLanguage)
         {
-            _currentCustomLanguageId = customLanguage.LanguageId;
-            var langButton = customLanguage.LanguageButton;
-            var langSetter = Object.FindObjectOfType<LanguageSetter>(true);
+            var wasUsingCustomLanguage = IsUsingCustomLanguage;
 
-            if (langSetter)
-                langSetter.SetLanguage(langButton);
+            _currentCustomLanguageId = customLanguage.LanguageId;
+
+            var languageButton = customLanguage.LanguageButton;
+            var languageSetter = Object.FindObjectOfType<LanguageSetter>(true);
+
+            if (languageSetter)
+                languageSetter.SetLanguage(languageButton);
             else
                 Main.Logger.LogWarning("Unable to find an instance of " + nameof(LanguageSetter));
 
-            TranslationController.Instance.SetLanguage(customLanguage.BaseLanguage);
+            var cachedLanguage = SupportedLangs.English;
 
-            var fullTranslations = File.ReadAllText(CurrentCustomLanguage.FilePath);
-            LanguageRoot = JObject.Parse(fullTranslations);
+            if (!wasUsingCustomLanguage)
+                cachedLanguage = CurrentGameLanguage;
+
+            var fullTranslations = File.ReadAllText(CurrentCustomLanguage.TranslationFilePath);
+
+            try
+            {
+                LanguageRoot = JObject.Parse(fullTranslations);
+            }
+            catch (Exception e)
+            {
+                Main.Logger.LogError($"The provided {ModConstants.TranslationDataFileName} is an invalid JSON! Details: {e}");
+
+                FallBackToVanillaLanguage();
+                CloseMenus();
+                DisplayPopup(FormatErrorMessage(ModConstants.TranslationDataFileName));
+
+                return false;
+            }
 
             ClearReplacementConfigCaches();
 
             if (customLanguage.ForceTextReplacementEnabled)
             {
                 var replacementRuleConfig = File.ReadAllText(customLanguage.ForceReplacementConfigPath);
-                CacheReplacementConfig(JsonConvert.DeserializeObject<JArray>(replacementRuleConfig));
-            }
-            
-            // Apply language change to UI
-            var menu = Object.FindObjectOfType<SettingsLanguageMenu>(true);
 
-            if (langButton && langButton.Title)
-            {
-                if (langSetter && langSetter.parentLangButton)
+                try
                 {
-                    langSetter.parentLangButton.text = langButton.Title.text;
+                    CacheReplacementConfig(JsonConvert.DeserializeObject<JArray>(replacementRuleConfig));
+                }
+                catch (Exception e)
+                {
+                    Main.Logger.LogError($"The provided {ModConstants.CustomReplacementRuleFileName} is an invalid JSON! Details: {e}");
 
-                    langSetter.AllButtons.ToArray().Do(button => button.Title.color = Color.white);
-                    langButton.Title.color = Color.green;
+                    CloseMenus();
+                    DisplayPopup(FormatErrorMessage(ModConstants.CustomReplacementRuleFileName));
+                }
+            }
+
+            void CloseMenus()
+            {
+                var clientOptionsMenu = Object.FindObjectOfType<OptionsMenuBehaviour>(true);
+
+                if (clientOptionsMenu)
+                    clientOptionsMenu.Close();
+
+                if (languageSetter)
+                    languageSetter.Close();
+            }
+
+            void FallBackToVanillaLanguage()
+            {
+                Patch.VanillaLanguageButtons.FirstOrDefault(button => button && button.Language.languageID == cachedLanguage).Button.OnClick.Invoke();
+
+                IsUsingCustomLanguage = false;
+            }
+
+            TranslationController.Instance.SetLanguage(customLanguage.BaseLanguage);
+
+            // Apply language change to UI
+            if (languageButton && languageButton.Title)
+            {
+                if (languageSetter && languageSetter.parentLangButton)
+                {
+                    languageSetter.parentLangButton.text = languageButton.Title.text;
+
+                    languageSetter.AllButtons.ToArray().Do(button => button.Title.color = Color.white);
+                    languageButton.Title.color = Color.green;
                 }
             }
 
@@ -316,6 +414,28 @@ namespace LanguageAdder
             Main.Logger.LogInfo($"Changed custom language to {customLanguage.LanguageName} (Base language: {CustomLanguage.GetCustomLanguageById(_currentCustomLanguageId).BaseLanguage})");
             
             RecordLastCustomLanguage(customLanguage);
+
+            return true;
+
+            string FormatErrorMessage(string fileName)
+            {
+                switch (cachedLanguage)
+                {
+                    case SupportedLangs.SChinese:
+                        return $"您想要设置的自定义语言的 {fileName} 的 JSON 格式无效。";
+                    case SupportedLangs.TChinese:
+                        return $"您想要設定的自訂語言 {fileName} 其 JSON 格式無效。";
+                    case SupportedLangs.English:
+                    default:
+                        return $"The JSON format of {fileName} of the custom language you want to set is invalid.";
+                }
+            }
+        }
+
+        public static void DisplayPopup(string message)
+        {
+            if (DisconnectPopup.InstanceExists && !GameManager.Instance)
+                DisconnectPopup.Instance.ShowCustom(message);
         }
 
         private static void CacheReplacementConfig(JArray config)
@@ -359,7 +479,7 @@ namespace LanguageAdder
         private static readonly int MaxVanillaLanguageId = Enum.GetValues<SupportedLangs>().Select(l => (int)l).Max() + 1;
 
         public string LanguageName { get; init; }
-        public string FilePath { get; init; }
+        public string TranslationFilePath { get; init; }
         [Obsolete("Unnecessary now. It is English by default.")] public SupportedLangs BaseLanguage { get; init; }
         public string ForceReplacementConfigPath { get; init; }
         public bool ForceTextReplacementEnabled => !ForceReplacementConfigPath.IsNullOrWhiteSpace();
@@ -370,14 +490,14 @@ namespace LanguageAdder
         public CustomLanguage(string languageName, string filePath, SupportedLangs baseLanguage = SupportedLangs.English, string forceReplacementConfigPath = "")
         {
             LanguageName = languageName;
-            FilePath = filePath;
+            TranslationFilePath = filePath;
             BaseLanguage = baseLanguage;
             ForceReplacementConfigPath = forceReplacementConfigPath;
             LanguageId = AssignNewId();
 
             AllLanguages.Add(this);
 
-            Main.Logger.LogInfo($"Language registered: {LanguageName} {FilePath} {BaseLanguage.ToString()}: {LanguageId} {forceReplacementConfigPath}");
+            Main.Logger.LogInfo($"Language registered: {LanguageName} {TranslationFilePath} {BaseLanguage.ToString()}: {LanguageId} {forceReplacementConfigPath}");
         }
 
         private static int AssignNewId()
