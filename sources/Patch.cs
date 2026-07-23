@@ -139,20 +139,7 @@ namespace LanguageAdder
         #region INITIALIZE
         [HarmonyPatch(typeof(TranslationController), nameof(TranslationController.Initialize))]
         [HarmonyPostfix]
-        static void InitCustomLanguage(TranslationController __instance)
-        {
-            try
-            {
-                if (!Directory.Exists(ModConstants.DataFolderPath))
-                    Directory.CreateDirectory(ModConstants.DataFolderPath);
-            }
-            catch (Exception e)
-            {
-                Main.Logger.LogError($"Error creating data folder: {ModConstants.DataFolderPath}\r\n{e}");
-            }
-
-            LanguageManager.LoadCustomLanguages();
-        }
+        static void InitCustomLanguage(TranslationController __instance) => LanguageManager.LoadCustomLanguages();
         #endregion
 
         #region TRANSLATION CONTROLLER PATCH

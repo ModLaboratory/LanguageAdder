@@ -135,6 +135,16 @@ namespace LanguageAdder
 
         public static void LoadCustomLanguages()
         {
+            try
+            {
+                Directory.CreateDirectory(ModConstants.DataFolderPath);
+            }
+            catch (Exception e)
+            {
+                Main.Logger.LogError($"Error creating data folder: {ModConstants.DataFolderPath}\r\n{e}");
+                return;
+            }
+
             if (IsUsingCustomLanguage)
             {
                 TranslationController.Instance.SetLanguage(CurrentCustomLanguage.BaseLanguage);
