@@ -8,7 +8,7 @@ A plugin for adding your custom languages in Among Us.
 
 ## Disclaimer
 
-This mod is not affiliated with Among Us or Innersloth LLC, and the content contained therein is not endorsed or otherwise sponsored by Innersloth LLC. Portions of the materials contained herein are property of Innersloth LLC.
+This mod is not affiliated with Among Us or Innersloth LLC, and the content contained therein is not endorsed or otherwise sponsored by Innersloth LLC. Portions of the materials contained herein are property of Innersloth LLC. © Innersloth LLC.
 
 ## Demonstrations
 
@@ -103,7 +103,7 @@ Configuration used to replace hard-coded texts that are not covered by `Translat
 
 #### Example
 
-```
+```json
 [
   {
     "key": "Done",
