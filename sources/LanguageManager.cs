@@ -210,7 +210,7 @@ namespace LanguageAdder
             }
 
             var lastCustomLanguage = ReadLastCustomLanguage();
-            var success = false;
+            var success = true;
 
             if (lastCustomLanguage != null)
                 success = SetCustomLanguage(lastCustomLanguage);
